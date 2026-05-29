@@ -31,12 +31,6 @@
       options = [ "subvol=@nix" "compress=zstd" "noatime" ];
     };
 
-  fileSystems."/var/lib/ollama" =
-    { device = "/dev/disk/by-uuid/1381b521-6b71-438b-a39a-75b44e0d6d4a";
-      fsType = "btrfs";
-      options = [ "subvol=@ollama" "noatime" "nodatacow" ];
-    };
-
   fileSystems."/boot" =
     { device = "/dev/disk/by-uuid/CF7E-704E";
       fsType = "vfat";

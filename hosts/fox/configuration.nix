@@ -1,9 +1,9 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, inputs, ... }:
 
 {
   imports = [
     ../../modules/base.nix
-    ./ollama.nix
+    ./llama.nix
     ./openwebui.nix
   ];
 
@@ -217,7 +217,7 @@
     git
     wget
     curl
-    claude-code        # run the agent locally on fox
+    inputs.llm-agents.packages.${pkgs.system}.claude-code  # numtide, rebuilt daily; cached at cache.numtide.com (see substituters below)
     xdg-utils          # xdg-open, so `claude` can launch the browser for auth
     # niri config spawns / binds these (hyprpaper/hypridle/hyprlock/dunst live
     # in home-manager — they're per-user session components):

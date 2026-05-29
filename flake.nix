@@ -3,6 +3,10 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    # Unstable, used as an overlay for individual packages that 25.11's pin is
+    # too old for (currently: llama-cpp — 25.11 has build 6981, which predates
+    # Gemma 4; unstable is 9190+). Lock so it doesn't drift.
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     home-manager = {
       url = "github:nix-community/home-manager/release-25.11";
@@ -26,10 +30,11 @@
     llm-agents.url = "github:numtide/llm-agents.nix";
   };
 
-  outputs = { self, nixpkgs, home-manager, niri, launcher, llm-agents, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, niri, launcher, llm-agents, ... }:
     {
       nixosConfigurations.fox = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
+        specialArgs = { inherit inputs; };
         modules = [
           ./hosts/fox/hardware-configuration.nix
           ./hosts/fox/configuration.nix
