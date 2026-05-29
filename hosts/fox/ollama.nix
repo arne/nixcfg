@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
 # Ollama on Strix Halo (gfx1151) — Vulkan/RADV backend.
 #
@@ -12,7 +12,26 @@
   services.ollama = {
     enable = true;
     package = pkgs.ollama-vulkan;
+    # Static user (not DynamicUser): /var/lib/ollama is its own btrfs subvol
+    # mountpoint, so systemd's DynamicUser StateDirectory= migration to
+    # /var/lib/private/ollama fails with EBUSY. A real user uses the subvol
+    # directly.
+    user = "ollama";
+    group = "ollama";
   };
+
+  # The upstream module hardcodes DynamicUser=true even when user/group are
+  # set, which the systemd manual flags as conflicting. Force it off so the
+  # subvol at /var/lib/ollama is used in place, not bind-mounted from
+  # /var/lib/private/ollama.
+  systemd.services.ollama.serviceConfig.DynamicUser = lib.mkForce false;
+
+  # The subvol mount is root-owned and empty; the unit's ReadWritePaths=
+  # includes both home and models, so the models subdir must pre-exist.
+  systemd.tmpfiles.rules = [
+    "d /var/lib/ollama        0750 ollama ollama -"
+    "d /var/lib/ollama/models 0750 ollama ollama -"
+  ];
 
   environment.systemPackages = [ pkgs.ollama-vulkan ];
 }
