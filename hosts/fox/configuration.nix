@@ -46,7 +46,7 @@
   };
 
   ###########################################################################
-  ## Networking — hostname `ram`, NetworkManager (Wi-Fi profile "Boksen"
+  ## Networking — hostname `fox`, NetworkManager (Wi-Fi profile "Boksen"
   ## is dropped into /etc/NetworkManager/system-connections during install)
   ###########################################################################
   networking.hostName = "fox";
@@ -219,11 +219,8 @@
     curl
     claude-code        # run the agent locally on fox
     xdg-utils          # xdg-open, so `claude` can launch the browser for auth
-    # niri config spawns / binds these:
-    hyprpaper
-    hypridle
-    hyprlock
-    dunst
+    # niri config spawns / binds these (hyprpaper/hypridle/hyprlock/dunst live
+    # in home-manager — they're per-user session components):
     brightnessctl
     wl-clipboard
     cliphist
@@ -247,6 +244,18 @@
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   # Let wheel users run nix without sudo prompts during setup.
   nix.settings.trusted-users = [ "root" "arne" ];
+
+  # Garbage-collect generations older than 14 days, weekly. `persistent` makes
+  # the timer catch up if the box is off when it would normally fire.
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 14d";
+    persistent = true;
+  };
+  # Hardlink identical store paths after each build to save disk.
+  nix.optimise.automatic = true;
+
   # Binary caches:
   #   niri.cachix.org — prebuilt niri (its check-phase EGL test aborts in the
   #     build sandbox, so compiling locally fails).

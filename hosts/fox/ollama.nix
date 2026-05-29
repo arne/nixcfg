@@ -44,5 +44,6 @@
   # 96 × 1024 × 1024 / 4 = 25165824. Leaves 32 GiB for the OS.
   boot.kernelParams = [ "ttm.pages_limit=25165824" ];
 
-  environment.systemPackages = [ pkgs.ollama-vulkan ];
+  # `services.ollama` already puts the package on PATH via its own
+  # environment.systemPackages — no need to add it again here.
 }

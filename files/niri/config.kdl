@@ -258,7 +258,7 @@ layout {
 // which may be more convenient to use.
 // See the binds section below for more spawn examples.
 
-spawn-at-startup "hyprpaper"
+// hyprpaper is autostarted by services.hyprpaper (systemd user unit).
 spawn-at-startup "hypridle"
 spawn-at-startup "dunst"
 spawn-sh-at-startup "wl-paste --type text --watch cliphist store"

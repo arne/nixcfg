@@ -9,7 +9,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # niri compositor (sodiboo's flake — canonical niri module + session)
+    # niri compositor (sodiboo's flake — canonical niri module + session).
+    # Don't `follows = nixpkgs`: the flake serves prebuilt outputs from
+    # niri.cachix.org, and the check-phase EGL test aborts in the build
+    # sandbox so compiling locally fails.
     niri.url = "github:sodiboo/niri-flake";
 
     launcher = {

@@ -10,6 +10,7 @@
     ../../home/motd.nix
     ../../home/yazi.nix
     ../../home/pi.nix
+    ../../home/hyprpaper.nix
   ];
 
   home.stateVersion = "25.11";
@@ -31,16 +32,14 @@
     pkgs.musikcube
     pkgs.telegram-desktop
     pkgs.nicotine-plus
+    # Per-user session components — niri spawns these at startup (hyprpaper
+    # is managed by services.hyprpaper instead, see ../../home/hyprpaper.nix).
+    pkgs.hypridle
+    pkgs.hyprlock
+    pkgs.dunst
     launcher.packages.${pkgs.system}.default
     llm-agents.packages.${pkgs.system}.pi
   ];
 
   programs.niri.config = builtins.readFile ../../files/niri/config.kdl;
-
-  xdg.configFile."hypr/hyprpaper.conf".text = ''
-    preload = /home/arne/wallpapers/totoro/totoro025-4x.png
-    wallpaper = ,/home/arne/wallpapers/totoro/totoro025-4x.png
-    splash = false
-    ipc = off
-  '';
 }
