@@ -33,5 +33,10 @@
     "d /var/lib/ollama/models 0750 ollama ollama -"
   ];
 
+  # Bump GTT (the dynamic shared-memory pool the iGPU draws from) from the
+  # 50%-of-RAM default to 96 GiB on this 128 GB box. Pages are 4 KiB:
+  # 96 × 1024 × 1024 / 4 = 25165824. Leaves 32 GiB for the OS.
+  boot.kernelParams = [ "ttm.pages_limit=25165824" ];
+
   environment.systemPackages = [ pkgs.ollama-vulkan ];
 }
