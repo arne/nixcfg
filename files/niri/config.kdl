@@ -553,12 +553,6 @@ binds {
     Mod+Ctrl+WheelScrollRight { move-column-right; }
     Mod+Ctrl+WheelScrollLeft  { move-column-left; }
 
-    // MX Master 3 horizontal scroll wheel — sideways through columns,
-    // no modifier needed. Apps that need horizontal scroll (rare) can still
-    // get it via Shift+vertical wheel.
-    WheelScrollRight { focus-column-right; }
-    WheelScrollLeft  { focus-column-left; }
-
     // Usually scrolling up and down with Shift in applications results in
     // horizontal scrolling; these binds replicate that.
     Mod+Shift+WheelScrollDown      { focus-column-right; }

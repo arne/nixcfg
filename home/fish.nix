@@ -11,8 +11,7 @@
     ];
 
     functions = {
-      # Original called `motd`; suppressed until that piece is ported.
-      fish_greeting = "";
+      fish_greeting = "motd";
     };
 
     interactiveShellInit = ''

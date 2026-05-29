@@ -7,6 +7,7 @@
     ../../home/helix.nix
     ../../home/firefox.nix
     ../../home/appearance.nix
+    ../../home/motd.nix
   ];
 
   home.stateVersion = "25.11";
@@ -26,6 +27,7 @@
   home.packages = [
     pkgs.gh
     pkgs.musikcube
+    pkgs.telegram-desktop
     launcher.packages.${pkgs.system}.default
   ];
 
