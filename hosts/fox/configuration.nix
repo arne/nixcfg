@@ -4,6 +4,7 @@
   imports = [
     ../../modules/base.nix
     ./ollama.nix
+    ./openwebui.nix
   ];
 
   ###########################################################################
@@ -53,6 +54,14 @@
   # NM manages the firewall; keep the default firewall on, SSH open.
   networking.firewall.enable = true;
   networking.firewall.allowedTCPPorts = [ 22 ];
+  # Drop new inbound IPv6 to global-unicast destinations (2000::/3) on the WAN
+  # iface so the public ISP prefix is invisible from the internet. ULA
+  # (fd00::/8), link-local, multicast, and tailscale0 are unaffected. The
+  # ctstate NEW filter means outbound v6 still works — response packets are
+  # ESTABLISHED and fall through to the state-accept rule in nixos-fw.
+  networking.firewall.extraCommands = ''
+    ip6tables -I INPUT 1 -i enp191s0 -d 2000::/3 -m conntrack --ctstate NEW -j DROP
+  '';
 
   ###########################################################################
   ## Locale / time
@@ -92,6 +101,14 @@
     initialPassword = "changeme";
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN8r647rf/5m/GEXN1kIccmJItzT1sdI0k4FGYSq5AKi arne@mac"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEoX8GswCzYqOs94smClAJBxAO0ZX2U2WaKgriZO2Z7R servo"
+      "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHb1GcfjCCMlzVsZw5Zku7UvbF3QrFPbP+kxFDU4a+H/9p2HalYD43ZkaJQphQMYqC1MIQd4Cjmg1RTbUTneC+M= aPad"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJkHOi39HCigHCOneTKIiY+C809n6d3sNHd3hoy2Uq21 aMini"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM8iwTusmiXgGpx7VxMXJ/3U6LbTbkEPw+dv4538dThs orbit"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBhF6a+vyLLQl74q6BHVbqeVxstHUMwVyDM4649b81Bg fismen"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAkjfCCcwrYPMff8OA6l5cJKaWBQ2RkbjcamyLib9uRM rootShell"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIBoj+n9iDeEVkDm9Yms0KNjqChlhGFrP6Aokh/DFByX air"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPmGloBn0yDmkJtsNEPQWYJdYBP1G0NNXeOw30r5801u ram"
     ];
   };
   # Passwordless sudo for wheel (per README §6).
@@ -230,11 +247,17 @@
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   # Let wheel users run nix without sudo prompts during setup.
   nix.settings.trusted-users = [ "root" "arne" ];
-  # niri-flake binary cache — pull prebuilt niri instead of compiling (its
-  # check-phase EGL test aborts in the build sandbox).
-  nix.settings.extra-substituters = [ "https://niri.cachix.org" ];
+  # Binary caches:
+  #   niri.cachix.org — prebuilt niri (its check-phase EGL test aborts in the
+  #     build sandbox, so compiling locally fails).
+  #   cache.numtide.com — prebuilt llm-agents.nix (pi, claude-code, codex, …).
+  nix.settings.extra-substituters = [
+    "https://niri.cachix.org"
+    "https://cache.numtide.com"
+  ];
   nix.settings.extra-trusted-public-keys = [
     "niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964="
+    "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
   ];
 
   # First release installed against. Do NOT bump casually.

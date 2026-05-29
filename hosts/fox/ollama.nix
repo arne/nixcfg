@@ -18,6 +18,12 @@
     # directly.
     user = "ollama";
     group = "ollama";
+    # Raise default num_ctx from ollama's 4 K. 128 K KV cache at 70B GQA is
+    # ~31 GiB on top of ~40 GiB weights → ~71 GiB of 96 GiB GTT used; smaller
+    # models fit with huge headroom. Prompt-prefill on gfx1151 Vulkan is the
+    # bottleneck at this size, not memory. Per-model `PARAMETER num_ctx` in a
+    # Modelfile still wins over this if set.
+    environmentVariables.OLLAMA_CONTEXT_LENGTH = "131072";
   };
 
   # The upstream module hardcodes DynamicUser=true even when user/group are

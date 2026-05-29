@@ -16,9 +16,14 @@
       url = "git+https://code.bas.es/arne/launcher";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # AI coding agents (pi, claude-code, codex, …). Numtide rebuilds these
+    # daily against their own pinned nixpkgs and serves prebuilt outputs from
+    # cache.numtide.com — don't `follows = nixpkgs` or every cache hit dies.
+    llm-agents.url = "github:numtide/llm-agents.nix";
   };
 
-  outputs = { self, nixpkgs, home-manager, niri, launcher, ... }:
+  outputs = { self, nixpkgs, home-manager, niri, launcher, llm-agents, ... }:
     {
       nixosConfigurations.fox = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
@@ -37,7 +42,7 @@
             home-manager.useUserPackages = true;
             home-manager.backupFileExtension = "hm-bak";
             home-manager.users.arne = import ./hosts/fox/home.nix;
-            home-manager.extraSpecialArgs = { inherit launcher; };
+            home-manager.extraSpecialArgs = { inherit launcher llm-agents; };
           }
         ];
       };

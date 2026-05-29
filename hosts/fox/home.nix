@@ -1,4 +1,4 @@
-{ config, pkgs, lib, launcher, ... }:
+{ config, pkgs, lib, launcher, llm-agents, ... }:
 
 {
   imports = [
@@ -9,6 +9,7 @@
     ../../home/appearance.nix
     ../../home/motd.nix
     ../../home/yazi.nix
+    ../../home/pi.nix
   ];
 
   home.stateVersion = "25.11";
@@ -31,6 +32,7 @@
     pkgs.telegram-desktop
     pkgs.nicotine-plus
     launcher.packages.${pkgs.system}.default
+    llm-agents.packages.${pkgs.system}.pi
   ];
 
   programs.niri.config = builtins.readFile ../../files/niri/config.kdl;
