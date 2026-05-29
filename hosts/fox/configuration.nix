@@ -1,6 +1,10 @@
 { config, pkgs, lib, ... }:
 
 {
+  imports = [
+    ../../modules/base.nix
+  ];
+
   ###########################################################################
   ## Boot / kernel
   ###########################################################################
@@ -81,7 +85,7 @@
     isNormalUser = true;
     uid = 1000;
     description = "Arne Skaar Fismen";
-    extraGroups = [ "wheel" "networkmanager" "video" "render" ];
+    extraGroups = [ "wheel" "networkmanager" "video" "render" "media" ];
     shell = pkgs.fish;
     # TEMPORARY login password for tuigreet — CHANGE on first login: `passwd`.
     initialPassword = "changeme";
@@ -91,6 +95,13 @@
   };
   # Passwordless sudo for wheel (per README §6).
   security.sudo.wheelNeedsPassword = false;
+
+  # Shared media group + library root. setgid (2775) so files dropped in by
+  # any member inherit the `media` group, keeping the tree readable to all.
+  users.groups.media = {};
+  systemd.tmpfiles.rules = [
+    "d /srv/music 2775 root media -"
+  ];
 
   programs.fish.enable = true;
 
@@ -131,6 +142,10 @@
 
   # Polkit (needed by greetd/niri session bits).
   security.polkit.enable = true;
+
+  # dconf daemon — needed for home-manager's dconf.settings (color-scheme
+  # preference for cross-toolkit dark mode).
+  programs.dconf.enable = true;
 
   ###########################################################################
   ## SSH — key-only, no root, no passwords (this is our remote lifeline)
@@ -177,11 +192,8 @@
   ###########################################################################
   environment.systemPackages = with pkgs; [
     git
-    helix
     wget
     curl
-    ghostty
-    firefox
     claude-code        # run the agent locally on fox
     xdg-utils          # xdg-open, so `claude` can launch the browser for auth
     # niri config spawns / binds these:

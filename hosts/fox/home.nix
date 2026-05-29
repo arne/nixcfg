@@ -1,6 +1,14 @@
 { config, pkgs, lib, launcher, ... }:
 
 {
+  imports = [
+    ../../home/fish.nix
+    ../../home/ghostty.nix
+    ../../home/helix.nix
+    ../../home/firefox.nix
+    ../../home/appearance.nix
+  ];
+
   home.stateVersion = "25.11";
   programs.home-manager.enable = true;
 
@@ -17,6 +25,7 @@
 
   home.packages = [
     pkgs.gh
+    pkgs.musikcube
     launcher.packages.${pkgs.system}.default
   ];
 

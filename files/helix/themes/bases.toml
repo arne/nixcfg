@@ -1,0 +1,199 @@
+# bases — dark theme for Helix
+# Drop in ~/.config/helix/themes/bases.toml, then in ~/.config/helix/config.toml: theme = "bases"
+
+# ── Editor / UI ──────────────────────────────────────
+"ui.background" = { bg = "bg" }
+"ui.background.separator" = { fg = "border" }
+"ui.text" = { fg = "fg" }
+"ui.text.focus" = { fg = "fg", modifiers = ["bold"] }
+"ui.text.inactive" = { fg = "muted" }
+"ui.text.info" = { fg = "fg" }
+
+"ui.window" = { fg = "border" }
+"ui.gutter" = { bg = "bg" }
+"ui.gutter.selected" = { bg = "surface" }
+
+"ui.cursor" = { fg = "bg", bg = "muted" }
+"ui.cursor.primary" = { fg = "bg", bg = "fg" }
+"ui.cursor.match" = { fg = "amber", modifiers = ["bold"] }
+"ui.cursor.normal" = { fg = "bg", bg = "fg" }
+"ui.cursor.insert" = { fg = "bg", bg = "accent_m" }
+"ui.cursor.select" = { fg = "bg", bg = "amber" }
+"ui.cursor.primary.normal" = { fg = "bg", bg = "fg" }
+"ui.cursor.primary.insert" = { fg = "bg", bg = "accent_m" }
+"ui.cursor.primary.select" = { fg = "bg", bg = "amber" }
+
+"ui.cursorline.primary" = { bg = "surface" }
+"ui.cursorline.secondary" = { bg = "surface" }
+
+"ui.linenr" = { fg = "faint" }
+"ui.linenr.selected" = { fg = "muted", bg = "surface", modifiers = ["bold"] }
+
+"ui.selection" = { bg = "border_str" }
+"ui.selection.primary" = { bg = "border_str" }
+"ui.highlight" = { bg = "raised" }
+
+"ui.statusline" = { fg = "muted", bg = "surface" }
+"ui.statusline.inactive" = { fg = "faint", bg = "surface" }
+"ui.statusline.normal" = { fg = "fg", bg = "border_str", modifiers = ["bold"] }
+"ui.statusline.insert" = { fg = "bg", bg = "accent_m", modifiers = ["bold"] }
+"ui.statusline.select" = { fg = "bg", bg = "amber", modifiers = ["bold"] }
+"ui.statusline.separator" = { fg = "border" }
+
+"ui.bufferline" = { fg = "muted", bg = "surface" }
+"ui.bufferline.background" = { bg = "bg" }
+"ui.bufferline.active" = { fg = "fg", bg = "raised", modifiers = ["bold"] }
+
+"ui.popup" = { fg = "fg", bg = "surface" }
+"ui.popup.info" = { fg = "fg", bg = "surface" }
+"ui.menu" = { fg = "fg", bg = "surface" }
+"ui.menu.selected" = { fg = "fg", bg = "border_str", modifiers = ["bold"] }
+"ui.menu.scroll" = { fg = "muted", bg = "raised" }
+"ui.help" = { fg = "fg", bg = "surface" }
+
+"ui.virtual.ruler" = { bg = "surface" }
+"ui.virtual.whitespace" = { fg = "faint" }
+"ui.virtual.indent-guide" = { fg = "faint" }
+"ui.virtual.inlay-hint" = { fg = "faint", bg = "surface", modifiers = ["italic"] }
+"ui.virtual.inlay-hint.parameter" = { fg = "faint", bg = "surface", modifiers = ["italic"] }
+"ui.virtual.inlay-hint.type" = { fg = "faint", bg = "surface", modifiers = ["italic"] }
+"ui.virtual.wrap" = { fg = "faint" }
+"ui.virtual.jump-label" = { fg = "amber", modifiers = ["bold"] }
+
+"ui.picker.header" = { fg = "muted", bg = "surface" }
+"ui.picker.header.column" = { fg = "muted", bg = "surface" }
+"ui.picker.header.column.active" = { fg = "accent", bg = "raised", modifiers = ["bold"] }
+
+# ── Syntax ──────────────────────────────────────────
+"comment" = { fg = "muted", modifiers = ["italic"] }
+"comment.line" = { fg = "muted", modifiers = ["italic"] }
+"comment.block" = { fg = "muted", modifiers = ["italic"] }
+"comment.block.documentation" = { fg = "muted", modifiers = ["italic"] }
+
+"string" = { fg = "amber" }
+"string.regexp" = { fg = "blue" }
+"string.special" = { fg = "accent_m" }
+"string.special.url" = { fg = "blue", modifiers = ["underlined"] }
+"string.special.path" = { fg = "amber" }
+"string.special.symbol" = { fg = "accent" }
+
+"constant" = { fg = "amber" }
+"constant.builtin" = { fg = "amber", modifiers = ["italic"] }
+"constant.builtin.boolean" = { fg = "accent", modifiers = ["bold"] }
+"constant.numeric" = { fg = "amber" }
+"constant.numeric.integer" = { fg = "amber" }
+"constant.numeric.float" = { fg = "amber" }
+"constant.character" = { fg = "amber" }
+"constant.character.escape" = { fg = "accent_m" }
+
+"variable" = { fg = "fg" }
+"variable.builtin" = { fg = "amber", modifiers = ["italic"] }
+"variable.parameter" = { fg = "fg" }
+"variable.other.member" = { fg = "fg" }
+
+"label" = { fg = "accent" }
+
+"punctuation" = { fg = "muted" }
+"punctuation.delimiter" = { fg = "muted" }
+"punctuation.bracket" = { fg = "muted" }
+"punctuation.special" = { fg = "accent" }
+
+"keyword" = { fg = "accent", modifiers = ["bold"] }
+"keyword.control" = { fg = "accent" }
+"keyword.control.conditional" = { fg = "accent" }
+"keyword.control.repeat" = { fg = "accent" }
+"keyword.control.import" = { fg = "accent" }
+"keyword.control.return" = { fg = "accent", modifiers = ["bold"] }
+"keyword.control.exception" = { fg = "red" }
+"keyword.operator" = { fg = "accent" }
+"keyword.directive" = { fg = "blue" }
+"keyword.function" = { fg = "accent", modifiers = ["bold"] }
+"keyword.storage" = { fg = "accent" }
+"keyword.storage.type" = { fg = "accent" }
+"keyword.storage.modifier" = { fg = "accent" }
+
+"operator" = { fg = "muted" }
+
+"function" = { fg = "blue" }
+"function.builtin" = { fg = "blue", modifiers = ["italic"] }
+"function.method" = { fg = "blue" }
+"function.macro" = { fg = "blue" }
+"function.special" = { fg = "blue" }
+
+"type" = { fg = "blue" }
+"type.builtin" = { fg = "blue", modifiers = ["italic"] }
+"type.parameter" = { fg = "blue" }
+"type.enum.variant" = { fg = "blue" }
+"constructor" = { fg = "blue" }
+
+"attribute" = { fg = "blue" }
+"namespace" = { fg = "blue" }
+"module" = { fg = "blue" }
+
+"tag" = { fg = "accent" }
+"tag.builtin" = { fg = "accent" }
+"tag.attribute" = { fg = "blue" }
+
+"special" = { fg = "amber" }
+
+# ── Markup ───────────────────────────────────────────
+"markup.heading" = { fg = "fg", modifiers = ["bold"] }
+"markup.heading.1" = { fg = "accent", modifiers = ["bold"] }
+"markup.heading.2" = { fg = "accent", modifiers = ["bold"] }
+"markup.heading.3" = { fg = "blue", modifiers = ["bold"] }
+"markup.heading.4" = { fg = "blue", modifiers = ["bold"] }
+"markup.heading.5" = { fg = "amber", modifiers = ["bold"] }
+"markup.heading.6" = { fg = "amber", modifiers = ["bold"] }
+"markup.heading.marker" = { fg = "muted" }
+"markup.list" = { fg = "accent" }
+"markup.list.numbered" = { fg = "accent" }
+"markup.list.unnumbered" = { fg = "accent" }
+"markup.bold" = { modifiers = ["bold"] }
+"markup.italic" = { modifiers = ["italic"] }
+"markup.strikethrough" = { modifiers = ["crossed_out"] }
+"markup.link" = { fg = "blue" }
+"markup.link.url" = { fg = "blue", modifiers = ["underlined"] }
+"markup.link.label" = { fg = "accent" }
+"markup.link.text" = { fg = "fg" }
+"markup.quote" = { fg = "muted", modifiers = ["italic"] }
+"markup.raw" = { fg = "amber" }
+"markup.raw.inline" = { fg = "amber" }
+"markup.raw.block" = { fg = "amber" }
+
+# ── Diff ─────────────────────────────────────────────
+"diff.plus" = { fg = "green" }
+"diff.minus" = { fg = "red" }
+"diff.delta" = { fg = "amber" }
+"diff.delta.moved" = { fg = "blue" }
+
+# ── Diagnostics ──────────────────────────────────────
+"diagnostic.error" = { underline = { color = "red", style = "curl" } }
+"diagnostic.warning" = { underline = { color = "amber", style = "curl" } }
+"diagnostic.info" = { underline = { color = "blue", style = "curl" } }
+"diagnostic.hint" = { underline = { color = "muted", style = "curl" } }
+"diagnostic.unnecessary" = { fg = "faint", modifiers = ["italic"] }
+"diagnostic.deprecated" = { modifiers = ["crossed_out"] }
+
+"error" = { fg = "red" }
+"warning" = { fg = "amber" }
+"info" = { fg = "blue" }
+"hint" = { fg = "muted" }
+
+# ── Palette ──────────────────────────────────────────
+[palette]
+bg = "#141210"
+surface = "#1a1815"
+raised = "#201e1a"
+fg = "#ede8de"
+muted = "#857e75"
+faint = "#4a4640"
+border = "#2c2924"
+border_str = "#3a3630"
+accent = "#4a9f82"
+accent_d = "#3d8a6e"
+accent_m = "#57b090"
+amber = "#e07800"
+amber_m = "#c56a00"
+red = "#d95050"
+green = "#48a068"
+blue = "#5a8fcc"

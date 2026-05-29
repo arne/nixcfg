@@ -1,3 +1,6 @@
 # nixos-rebuild build output symlinks
 result
 result-*
+
+# Local-only bootstrap notes for Claude (not shared)
+CLAUDE.md
