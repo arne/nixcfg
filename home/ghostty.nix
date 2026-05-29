@@ -73,4 +73,10 @@ in
       };
     };
   };
+
+  # Mark ghostty as the user's default terminal per the freedesktop spec.
+  # xdg-terminal-exec (and increasingly other tools) read this list.
+  xdg.configFile."xdg-terminals.list".text = ''
+    com.mitchellh.ghostty.desktop
+  '';
 }

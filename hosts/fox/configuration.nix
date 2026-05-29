@@ -126,9 +126,14 @@
   };
 
   # Portals for screenshots/screencast/file pickers under niri.
+  # Without xdg.portal.config, xdg-desktop-portal doesn't know which backend
+  # handles each interface — GTK FileChooser requests then fall through to
+  # xdg-open, which on niri ends up launching whatever handles inode/directory
+  # (Firefox by default; yazi after the override). Force gtk for everything.
   xdg.portal = {
     enable = true;
     extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+    config.niri.default = [ "gtk" ];
   };
 
   # PipeWire audio.
@@ -217,6 +222,10 @@
 
   # Default browser so CLI tools (e.g. `claude` auth) open Firefox via xdg-open.
   environment.sessionVariables.BROWSER = "firefox";
+
+  # Default terminal so apps that consult $TERMINAL (and xdg-terminal-exec
+  # via the per-user xdg-terminals.list in home/ghostty.nix) launch ghostty.
+  environment.sessionVariables.TERMINAL = "ghostty";
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   # Let wheel users run nix without sudo prompts during setup.

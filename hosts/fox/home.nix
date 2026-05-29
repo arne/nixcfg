@@ -8,6 +8,7 @@
     ../../home/firefox.nix
     ../../home/appearance.nix
     ../../home/motd.nix
+    ../../home/yazi.nix
   ];
 
   home.stateVersion = "25.11";
@@ -28,6 +29,7 @@
     pkgs.gh
     pkgs.musikcube
     pkgs.telegram-desktop
+    pkgs.nicotine-plus
     launcher.packages.${pkgs.system}.default
   ];
 
