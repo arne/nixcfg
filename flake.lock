@@ -21,6 +21,26 @@
         "type": "github"
       }
     },
+    "launcher": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1780053184,
+        "narHash": "sha256-RbRyQqEpX7eSm2bX81tEzat2aH1W9/DeDjHNo7JrpCw=",
+        "ref": "refs/heads/main",
+        "rev": "f4290e60e15456c10a1a160c4cc433395d6d5b47",
+        "revCount": 5,
+        "type": "git",
+        "url": "https://code.bas.es/arne/launcher"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://code.bas.es/arne/launcher"
+      }
+    },
     "niri": {
       "inputs": {
         "niri-stable": "niri-stable",
@@ -128,6 +148,7 @@
     "root": {
       "inputs": {
         "home-manager": "home-manager",
+        "launcher": "launcher",
         "niri": "niri",
         "nixpkgs": "nixpkgs_2"
       }

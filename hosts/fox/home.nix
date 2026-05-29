@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, launcher, ... }:
 
 {
   home.stateVersion = "25.11";
@@ -15,7 +15,17 @@
     };
   };
 
-  home.packages = with pkgs; [
-    gh
+  home.packages = [
+    pkgs.gh
+    launcher.packages.${pkgs.system}.default
   ];
+
+  programs.niri.config = builtins.readFile ../../files/niri/config.kdl;
+
+  xdg.configFile."hypr/hyprpaper.conf".text = ''
+    preload = /home/arne/wallpapers/totoro/totoro025-4x.png
+    wallpaper = ,/home/arne/wallpapers/totoro/totoro025-4x.png
+    splash = false
+    ipc = off
+  '';
 }
