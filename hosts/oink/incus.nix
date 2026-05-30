@@ -33,17 +33,28 @@
   networking.nftables.tables.sandbox-egress = {
     family = "inet";
     content = ''
-      # container -> outside world: block the host's public /24 (host +
-      # neighbouring customers), private LANs, and link-local/metadata.
+      # container -> outside world: block all RFC1918 EXCEPT the sandbox bridge
+      # (10.100.0.0/24 — sandboxes reaching each other over the tailnet is a
+      # feature), the host's public /24 (host + neighbouring customers),
+      # link-local/metadata, and the 100.64.0.0/10 tailnet overlay (so a
+      # container can't route into oink's personal tailnet A). Tailnet-B traffic
+      # is WireGuard-encapsulated to public endpoints, so it is unaffected.
       chain forward {
         type filter hook forward priority -10; policy accept;
-        iifname "incusbr0" ip daddr { 169.254.0.0/16, 172.16.0.0/12, 185.181.63.0/24, 192.168.0.0/16 } drop
+        iifname "incusbr0" ip daddr 10.100.0.0/24 accept
+        iifname "incusbr0" ip daddr { 10.0.0.0/8, 100.64.0.0/10, 169.254.0.0/16, 172.16.0.0/12, 185.181.63.0/24, 192.168.0.0/16 } drop
       }
-      # container -> host: allow only DNS (UDP/TCP 53); drop the rest of TCP to
-      # 10.100.0.1 (notably the globally-open :22). DHCP (UDP 67) is untouched.
+      # container -> host: the host's services (notably the globally-open :22,
+      # reachable on its public AND tailnet IPs) must stay out of reach. Packets
+      # addressed to any of the host's own IPs land on INPUT, not forward, so we
+      # key the drop on the ingress interface rather than the dest IP — keying on
+      # daddr 10.100.0.1 alone left :22 open via 185.181.63.4 / the 100.x IP.
+      # Allow only DNS + DHCP to the host; drop everything else from the bridge.
       chain hostports {
         type filter hook input priority -10; policy accept;
-        iifname "incusbr0" ip daddr 10.100.0.1 tcp dport != 53 drop
+        iifname "incusbr0" udp dport { 53, 67 } accept
+        iifname "incusbr0" tcp dport 53 accept
+        iifname "incusbr0" drop
       }
     '';
   };
