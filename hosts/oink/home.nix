@@ -13,6 +13,9 @@
   home.stateVersion = "25.11";
   programs.home-manager.enable = true;
 
+  # It's a pig, not a fox.
+  motd.animal = "piggy";
+
   programs.git = {
     enable = true;
     settings = {
