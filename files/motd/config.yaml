@@ -1,8 +1,8 @@
-# Sample motd config. Copy to ~/.config/motd/config.yaml and edit.
+# motd config template. Rendered to /etc/motd.yaml by modules/motd.nix, which
+# fills in the animal field per host from the `motd.animal` option.
 #
-# `mark` — the friendly animal on the left. Pick any file from the marks dir,
-# or remove the line entirely to drop the mark. `@animal@` is substituted per
-# host by home/motd.nix (see the `motd.animal` option).
+# `mark` — the friendly animal on the left. Pick any name from the marks dir,
+# or remove the line entirely to drop the mark.
 mark: { animal: @animal@}
 
 layout:

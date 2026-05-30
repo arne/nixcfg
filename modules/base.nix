@@ -1,9 +1,21 @@
-{ pkgs, ... }:
+{ pkgs, inputs, ... }:
 
 {
-  imports = [ ./motd.nix ./tailscale.nix ];
+  imports = [ ./motd.nix ./tailscale.nix ./ssh-keys.nix ];
 
   nixpkgs.config.allowUnfree = true;
+
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  # Let wheel users run nix without sudo prompts during setup.
+  nix.settings.trusted-users = [ "root" "arne" ];
+
+  # cache.numtide.com — prebuilt llm-agents.nix (pi, claude-code, codex, …),
+  # rebuilt daily. Shared by every host (extra-substituters merges, so hosts
+  # can add their own caches on top).
+  nix.settings.extra-substituters = [ "https://cache.numtide.com" ];
+  nix.settings.extra-trusted-public-keys = [
+    "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
+  ];
 
   environment.systemPackages = with pkgs; [
     git
@@ -16,6 +28,7 @@
     jq                                # used by ~/.claude/statusline-command.sh (and generally useful)
     nh                                # nicer nixos-rebuild wrapper (diffs, gc helpers)
     (callPackage ../pkgs/forge.nix { })
+    inputs.llm-agents.packages.${pkgs.system}.claude-code  # numtide, rebuilt daily; cached at cache.numtide.com (see substituters above)
     # motd binary + global config/greeting live in ./motd.nix.
   ];
 

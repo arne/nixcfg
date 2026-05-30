@@ -99,17 +99,7 @@
     shell = pkgs.fish;
     # TEMPORARY login password for tuigreet — CHANGE on first login: `passwd`.
     initialPassword = "changeme";
-    openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN8r647rf/5m/GEXN1kIccmJItzT1sdI0k4FGYSq5AKi arne@mac"
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEoX8GswCzYqOs94smClAJBxAO0ZX2U2WaKgriZO2Z7R servo"
-      "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHb1GcfjCCMlzVsZw5Zku7UvbF3QrFPbP+kxFDU4a+H/9p2HalYD43ZkaJQphQMYqC1MIQd4Cjmg1RTbUTneC+M= aPad"
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJkHOi39HCigHCOneTKIiY+C809n6d3sNHd3hoy2Uq21 aMini"
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM8iwTusmiXgGpx7VxMXJ/3U6LbTbkEPw+dv4538dThs orbit"
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBhF6a+vyLLQl74q6BHVbqeVxstHUMwVyDM4649b81Bg fismen"
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAkjfCCcwrYPMff8OA6l5cJKaWBQ2RkbjcamyLib9uRM rootShell"
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIBoj+n9iDeEVkDm9Yms0KNjqChlhGFrP6Aokh/DFByX air"
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPmGloBn0yDmkJtsNEPQWYJdYBP1G0NNXeOw30r5801u ram"
-    ];
+    # SSH keys come from the shared list in modules/ssh-keys.nix (config.mine.sshKeys).
   };
   # Passwordless sudo for wheel (per README §6).
   security.sudo.wheelNeedsPassword = false;
@@ -208,8 +198,8 @@
   ## System packages — desktop deps referenced by the niri config + basics
   ###########################################################################
   environment.systemPackages = with pkgs; [
-    # git / wget / curl / htop and other shared CLI tooling live in modules/base.nix.
-    inputs.llm-agents.packages.${pkgs.system}.claude-code  # numtide, rebuilt daily; cached at cache.numtide.com (see substituters below)
+    # git / wget / curl / htop / claude-code and other shared CLI tooling live
+    # in modules/base.nix.
     xdg-utils          # xdg-open, so `claude` can launch the browser for auth
     # niri config spawns / binds these (hyprpaper/hypridle/hyprlock/dunst live
     # in home-manager — they're per-user session components):
@@ -231,9 +221,8 @@
   # via the per-user xdg-terminals.list in home/ghostty.nix) launch ghostty.
   environment.sessionVariables.TERMINAL = "ghostty";
 
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
-  # Let wheel users run nix without sudo prompts during setup.
-  nix.settings.trusted-users = [ "root" "arne" ];
+  # nix experimental-features / trusted-users / the numtide cache are shared
+  # via modules/base.nix.
 
   # Garbage-collect generations older than 14 days, weekly. `persistent` makes
   # the timer catch up if the box is off when it would normally fire.
@@ -246,17 +235,14 @@
   # Hardlink identical store paths after each build to save disk.
   nix.optimise.automatic = true;
 
-  # Binary caches:
+  # Binary caches (numtide cache is shared via modules/base.nix):
   #   niri.cachix.org — prebuilt niri (its check-phase EGL test aborts in the
   #     build sandbox, so compiling locally fails).
-  #   cache.numtide.com — prebuilt llm-agents.nix (pi, claude-code, codex, …).
   nix.settings.extra-substituters = [
     "https://niri.cachix.org"
-    "https://cache.numtide.com"
   ];
   nix.settings.extra-trusted-public-keys = [
     "niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964="
-    "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
   ];
 
   # First release installed against. Do NOT bump casually.
