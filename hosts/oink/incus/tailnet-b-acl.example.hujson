@@ -1,0 +1,38 @@
+// Example tailnet-B policy for one cohort ("firsthouse", 5 employees).
+// HuJSON (comments + trailing commas allowed) — paste into the tailnet-B
+// admin console and replace the names/emails with real ones. See cohorts.md.
+//
+// Prereq the policy can't express: the OAuth client used by sandbox-new-client
+// must also OWN every tag below (admin console -> OAuth client -> tags).
+{
+  "tagOwners": {
+    "tag:firsthouse":       ["autogroup:admin"],
+    "tag:firsthouse-alice": ["autogroup:admin"],
+    "tag:firsthouse-bob":   ["autogroup:admin"],
+    "tag:firsthouse-carol": ["autogroup:admin"],
+    "tag:firsthouse-dave":  ["autogroup:admin"],
+    "tag:firsthouse-erin":  ["autogroup:admin"],
+  },
+
+  "groups": {
+    "group:firsthouse": [
+      "alice@firsthouse.com", "bob@firsthouse.com", "carol@firsthouse.com",
+      "dave@firsthouse.com", "erin@firsthouse.com",
+    ],
+  },
+
+  // Shared service: the cohort's boxes (curl) and the employees' own devices
+  // (browser) can reach any cohort box on :8080. Nothing else cross-box.
+  "acls": [
+    { "action": "accept", "src": ["group:firsthouse", "tag:firsthouse"], "dst": ["tag:firsthouse:8080"] },
+  ],
+
+  // SSH: each employee may land on ONLY their own box, as their own username.
+  "ssh": [
+    { "action": "accept", "src": ["alice@firsthouse.com"], "dst": ["tag:firsthouse-alice"], "users": ["alice"] },
+    { "action": "accept", "src": ["bob@firsthouse.com"],   "dst": ["tag:firsthouse-bob"],   "users": ["bob"] },
+    { "action": "accept", "src": ["carol@firsthouse.com"], "dst": ["tag:firsthouse-carol"], "users": ["carol"] },
+    { "action": "accept", "src": ["dave@firsthouse.com"],  "dst": ["tag:firsthouse-dave"],  "users": ["dave"] },
+    { "action": "accept", "src": ["erin@firsthouse.com"],  "dst": ["tag:firsthouse-erin"],  "users": ["erin"] },
+  ],
+}

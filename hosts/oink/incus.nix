@@ -118,7 +118,9 @@
   ## Admin + provisioning tooling.
   ##   sops / ssh-to-age — edit secrets/oink.yaml (the tailnet-B OAuth secret).
   ##   sandbox-setup      — create the egress ACL + client-sandbox profile (idempotent).
-  ##   sandbox-new-client — mint a tailnet-B key + launch one client container.
+  ##   sandbox-new-client — provision one employee box: `--cohort <client>
+  ##                        --user <login>` (random Ghibli hostname, tags,
+  ##                        Tailscale-SSH login). See ./incus/cohorts.md.
   ## The two scripts live in ./incus/ and are packaged with pinned deps.
   ###########################################################################
   environment.systemPackages = [
