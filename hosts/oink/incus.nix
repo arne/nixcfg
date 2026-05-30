@@ -1,4 +1,4 @@
-{ ... }:
+{ pkgs, config, ... }:
 
 {
   ###########################################################################
@@ -17,10 +17,47 @@
   # fails eval. Incus manages its own nftables tables for bridge NAT/DHCP.
   networking.nftables.enable = true;
 
-  # The Incus bridge runs its own DHCP/DNS (dnsmasq); the host firewall would
-  # otherwise drop those requests. Trusting the bridge only affects host INPUT
-  # — container egress is constrained separately by Incus network ACLs (Phase 4).
-  networking.firewall.trustedInterfaces = [ "incusbr0" ];
+  # Containers need the bridge's DHCP/DNS (dnsmasq on the host). We do NOT trust
+  # the whole interface — the host opens :22 globally for WAN SSH, which would
+  # otherwise be reachable from the bridge. Allowing only 53/67 here, plus the
+  # sandbox-egress table below (which drops the rest of container→host TCP and
+  # container→internal), keeps the host + LAN out of reach.
+  networking.firewall.interfaces.incusbr0.allowedUDPPorts = [ 53 67 ];
+  networking.firewall.interfaces.incusbr0.allowedTCPPorts = [ 53 ];
+
+  # Egress hardening, host-side. Done in nftables (priority -10, ahead of both
+  # the NixOS firewall and Incus's own tables, so a drop here is final) rather
+  # than via Incus per-NIC network ACLs — those race the container's first-boot
+  # DHCP and wedge it. Internet + intra-fleet (10.100.0.0/24) + tailnet-B
+  # WireGuard all stay open; only host/LAN/metadata are cut off.
+  networking.nftables.tables.sandbox-egress = {
+    family = "inet";
+    content = ''
+      # container -> outside world: block all RFC1918 EXCEPT the sandbox bridge
+      # (10.100.0.0/24 — sandboxes reaching each other over the tailnet is a
+      # feature), the host's public /24 (host + neighbouring customers),
+      # link-local/metadata, and the 100.64.0.0/10 tailnet overlay (so a
+      # container can't route into oink's personal tailnet A). Tailnet-B traffic
+      # is WireGuard-encapsulated to public endpoints, so it is unaffected.
+      chain forward {
+        type filter hook forward priority -10; policy accept;
+        iifname "incusbr0" ip daddr 10.100.0.0/24 accept
+        iifname "incusbr0" ip daddr { 10.0.0.0/8, 100.64.0.0/10, 169.254.0.0/16, 172.16.0.0/12, 185.181.63.0/24, 192.168.0.0/16 } drop
+      }
+      # container -> host: the host's services (notably the globally-open :22,
+      # reachable on its public AND tailnet IPs) must stay out of reach. Packets
+      # addressed to any of the host's own IPs land on INPUT, not forward, so we
+      # key the drop on the ingress interface rather than the dest IP — keying on
+      # daddr 10.100.0.1 alone left :22 open via 185.181.63.4 / the 100.x IP.
+      # Allow only DNS + DHCP to the host; drop everything else from the bridge.
+      chain hostports {
+        type filter hook input priority -10; policy accept;
+        iifname "incusbr0" udp dport { 53, 67 } accept
+        iifname "incusbr0" tcp dport 53 accept
+        iifname "incusbr0" drop
+      }
+    '';
+  };
 
   virtualisation.incus = {
     enable = true;
@@ -76,4 +113,26 @@
       ];
     };
   };
+
+  ###########################################################################
+  ## Admin + provisioning tooling.
+  ##   sops / ssh-to-age — edit secrets/oink.yaml (the tailnet-B OAuth secret).
+  ##   sandbox-setup      — create the egress ACL + client-sandbox profile (idempotent).
+  ##   sandbox-new-client — mint a tailnet-B key + launch one client container.
+  ## The two scripts live in ./incus/ and are packaged with pinned deps.
+  ###########################################################################
+  environment.systemPackages = [
+    pkgs.sops
+    pkgs.ssh-to-age
+    (pkgs.writeShellApplication {
+      name = "sandbox-setup";
+      runtimeInputs = [ config.virtualisation.incus.clientPackage ];
+      text = builtins.readFile ./incus/setup-sandbox.sh;
+    })
+    (pkgs.writeShellApplication {
+      name = "sandbox-new-client";
+      runtimeInputs = [ config.virtualisation.incus.clientPackage pkgs.jq pkgs.curl ];
+      text = builtins.readFile ./incus/new-client.sh;
+    })
+  ];
 }

@@ -51,6 +51,40 @@
   ## (/dev/net/tun, Phase 4). Access is via Tailscale SSH only — no openssh
   ## service is enabled, so the tailnet is the sole way in.
   ###########################################################################
+
+  # Networking: DHCP on eth0 from Incus's bridge (the lxc image profile leaves
+  # the guest with no network config, so set it explicitly). systemd-networkd
+  # + resolved manage the lease and DNS; the lxc base sets useHostResolvConf,
+  # which must be off or it conflicts with resolved.
+  systemd.network.enable = true;
+  services.resolved.enable = true;
+  networking.useHostResolvConf = lib.mkForce false;
+  networking.useDHCP = false;
+  systemd.network.networks."10-eth0" = {
+    matchConfig.Name = "eth0";
+    networkConfig.DHCP = "ipv4";
+    linkConfig.RequiredForOnline = "routable";
+  };
+
+  # Defensive DHCP safety-net: if eth0 has no lease shortly after boot (a
+  # transient DHCP failure / lost race with host-side setup), bounce networkd
+  # to force a clean cycle, so the container always comes up with networking.
+  systemd.services.sandbox-net-ensure = {
+    description = "Ensure eth0 obtains a DHCP lease (first-boot ACL race)";
+    after = [ "systemd-networkd.service" ];
+    wants = [ "systemd-networkd.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig.Type = "oneshot";
+    script = ''
+      for _ in $(seq 1 10); do
+        if ${pkgs.iproute2}/bin/ip -4 addr show eth0 | grep -q 'inet 10\.'; then exit 0; fi
+        sleep 2
+      done
+      echo "eth0 still has no lease after 20s — bouncing networkd" >&2
+      systemctl restart systemd-networkd
+    '';
+  };
+
   services.tailscale.enable = true;
 
   # First-boot join. The provisioner drops the per-instance auth material at
