@@ -77,7 +77,7 @@ fi
 
 for id in "${device_ids[@]}"; do
   echo "==> deleting tailnet-B device ${id}"
-  curl -sS --fail -X DELETE \
+  curl -sS --fail -o /dev/null -X DELETE \
     -H "Authorization: Bearer ${access_token}" \
     "https://api.tailscale.com/api/v2/device/${id}" \
     || { echo "error: device ${id} delete failed — the OAuth client likely lacks devices write scope."; exit 1; }
