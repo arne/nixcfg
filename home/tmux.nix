@@ -22,17 +22,17 @@ in
     enable = true;
 
     # Structured options replace the equivalent raw directives from the
-    # old ~/.tmux.conf (prefix rebind, base-index, focus events).
-    # `mouse` and `historyLimit` come from the shared cli.nix baseline
-    # (also used by oink), so they're intentionally not set here.
-    # tmux-256color + the terminal-features lines below give truecolor.
-    # sensibleOnTop is off to keep behaviour exactly as ported.
+    # old ~/.tmux.conf. This module is shared by every host (imported via
+    # cli.nix). tmux-256color + the terminal-features lines below give
+    # truecolor. sensibleOnTop is off to keep behaviour exactly as ported.
     prefix = "C-a";
     baseIndex = 1;
     focusEvents = true;
     keyMode = "emacs";
     terminal = "tmux-256color";
     sensibleOnTop = false;
+    mouse = true;
+    historyLimit = 50000;
 
     extraConfig = ''
       bind Escape copy-mode

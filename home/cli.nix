@@ -6,19 +6,16 @@
   # mostly just wants `enable = true` plus shell integration. Fish is HM-managed
   # (see ./fish.nix), so each program's fish hooks wire themselves in.
 
+  # tmux is a full module (prefix, themes, keybinds); pull it in here so every
+  # host gets it, not just fox.
+  imports = [ ./tmux.nix ];
+
   # GitHub CLI.
   programs.gh.enable = true;
 
   # bat — `cat` with syntax highlighting (command is `bat`, not Debian's
   # `batcat`). Also backs helix/yazi previews if they reach for it.
   programs.bat.enable = true;
-
-  # tmux — terminal multiplexer. Mouse on, big scrollback; otherwise stock.
-  programs.tmux = {
-    enable = true;
-    mouse = true;
-    historyLimit = 50000;
-  };
 
   # zoxide — the "smart cd". `--cmd cd` replaces `cd` itself, so plain `cd foo`
   # jumps to a frecent match; `cdi` is the interactive picker. Fish integration
