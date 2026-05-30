@@ -258,9 +258,8 @@ layout {
 // which may be more convenient to use.
 // See the binds section below for more spawn examples.
 
-// hyprpaper is autostarted by services.hyprpaper (systemd user unit).
-spawn-at-startup "hypridle"
-spawn-at-startup "dunst"
+// hyprpaper, hypridle and dunst are autostarted as systemd user units by
+// services.hyprpaper / services.hypridle / services.dunst.
 spawn-sh-at-startup "wl-paste --type text --watch cliphist store"
 spawn-sh-at-startup "wl-paste --type image --watch cliphist store"
 
