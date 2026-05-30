@@ -47,6 +47,17 @@
   networking.firewall.allowedTCPPorts = [ 22 ];
 
   ###########################################################################
+  ## Tailscale — base.nix enables the service ("client"); oink is also an exit
+  ## node, so bump routing features to "both" (turns on the IPv4/IPv6 forwarding
+  ## sysctls needed to route other nodes' traffic out the gigahost.no uplink).
+  ## Advertising is set at auth time, not declaratively (we use manual auth, so
+  ## extraUpFlags would be ignored). On first bring-up, SSH in and run:
+  ##   sudo tailscale up --advertise-exit-node
+  ## then approve the exit node in the Tailscale admin console.
+  ###########################################################################
+  services.tailscale.useRoutingFeatures = "both";
+
+  ###########################################################################
   ## SSH — key-only, our remote lifeline. Root login kept (key only) during
   ## bring-up; tighten to "no" once `arne` is confirmed working post-cutover.
   ###########################################################################

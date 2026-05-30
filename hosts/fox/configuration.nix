@@ -193,13 +193,7 @@
   ###########################################################################
   services.hardware.bolt.enable = true;
 
-  ###########################################################################
-  ## Tailscale — system service, always on (auth/state restored post-install)
-  ###########################################################################
-  services.tailscale = {
-    enable = true;
-    useRoutingFeatures = "client";
-  };
+  # Tailscale lives in modules/tailscale.nix (shared via base.nix).
 
   ###########################################################################
   ## Fonts

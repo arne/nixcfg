@@ -1,7 +1,7 @@
 { pkgs, ... }:
 
 {
-  imports = [ ./motd.nix ];
+  imports = [ ./motd.nix ./tailscale.nix ];
 
   nixpkgs.config.allowUnfree = true;
 
