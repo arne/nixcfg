@@ -4,3 +4,6 @@ result-*
 
 # Local-only bootstrap notes for Claude (not shared)
 CLAUDE.md
+
+# Local Claude Code state (per-machine, not shared)
+.claude/
