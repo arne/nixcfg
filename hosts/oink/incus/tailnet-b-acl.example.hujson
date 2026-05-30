@@ -1,9 +1,10 @@
 // Example tailnet-B policy for one cohort ("firsthouse", 5 employees).
-// HuJSON (comments + trailing commas allowed) — paste into the tailnet-B
+// HuJSON (comments + trailing commas allowed) — paste/merge into the tailnet-B
 // admin console and replace the names/emails with real ones. See cohorts.md.
 //
 // Prereq the policy can't express: the OAuth client used by sandbox-new-client
-// must also OWN every tag below (admin console -> OAuth client -> tags).
+// must also OWN every tag below (admin console -> OAuth client -> tags), with
+// the Auth Keys (write) + Devices Core (write) scopes.
 {
   "tagOwners": {
     "tag:firsthouse":       ["autogroup:admin"],
@@ -14,17 +15,14 @@
     "tag:firsthouse-erin":  ["autogroup:admin"],
   },
 
-  "groups": {
-    "group:firsthouse": [
-      "alice@firsthouse.com", "bob@firsthouse.com", "carol@firsthouse.com",
-      "dave@firsthouse.com", "erin@firsthouse.com",
-    ],
-  },
-
-  // Shared service: the cohort's boxes (curl) and the employees' own devices
-  // (browser) can reach any cohort box on :8080. Nothing else cross-box.
-  "acls": [
-    { "action": "accept", "src": ["group:firsthouse", "tag:firsthouse"], "dst": ["tag:firsthouse:8080"] },
+  // Shared services: the rest of the tailnet can reach any cohort box on any
+  // TCP port (HTTP can be served on any port). This also covers box-to-box,
+  // since the boxes are themselves tailnet members. It does NOT widen SSH —
+  // that's gated by the ssh block below (the boxes run only Tailscale SSH, so
+  // even tcp:* to :22 still goes through the ssh policy). Add "udp:*" for
+  // HTTP/3 / QUIC, or use ["*"] for all protocols.
+  "grants": [
+    { "src": ["*"], "dst": ["tag:firsthouse"], "ip": ["tcp:*"] },
   ],
 
   // SSH: each employee may land on ONLY their own box, as their own username.

@@ -12,8 +12,8 @@ their own sandbox, and:
 1. they log in as **`<theirname>@<hostname>`** over tailnet B (Tailscale SSH,
    no SSH keys);
 2. **only that employee** can log into their box;
-3. **every** employee in the cohort can reach a shared service on any cohort
-   box — e.g. `http://<hostname>:8080`.
+3. the **rest of the tailnet** can reach a service on any cohort box on any
+   port — e.g. `http://<hostname>:<port>`.
 
 ## Model
 
@@ -21,11 +21,11 @@ their own sandbox, and:
 |---|---|
 | Hostname | Random free name from the lower-case Studio-Ghibli pool in `new-client.sh`. "Taken" = a live Incus instance **or** any tailnet-B device, so no two boxes ever collide (no MagicDNS suffixing). |
 | Per-box SSH isolation | Each box carries a **unique tag** `tag:<cohort>-<login>`. The tailnet-B `ssh` rule maps one employee → that one tag → local user `<login>`. (Tailscale `ssh.dst` keys on tags, and admin-provisioned nodes can't use `autogroup:self`, so a per-box tag is the only lever.) |
-| Shared :8080 | Each box also carries the **cohort tag** `tag:<cohort>`. One `acls` rule lets `tag:<cohort>` (and the employees' own devices) reach `tag:<cohort>:8080`. |
+| Shared services | Each box also carries the **cohort tag** `tag:<cohort>`. One `grants` rule lets the rest of the tailnet (`src ["*"]`) reach `tag:<cohort>` on any TCP port (`ip ["tcp:*"]`) — covers box-to-box too. |
 | Login identity | Tailscale identity (tailnet-B membership / SSO). No keys, no `authorized_keys`, no `openssh`. |
 | Local account | `new-client.sh` creates `<login>` (wheel + passwordless sudo) in the box at provision time. |
 
-Inter-box `:8080` traffic is WireGuard-encapsulated tailnet-B and is **not**
+This shared-service traffic is WireGuard-encapsulated tailnet-B and is **not**
 affected by the host bridge-egress drops added in Phase 4.
 
 ## Provisioner
@@ -60,9 +60,11 @@ These cannot be done from the host and must precede provisioning:
 1. Add the employees to tailnet B (users, or node-sharing) — it's the only
    ingress to the boxes.
 2. Grant the tailnet-B **OAuth client** ownership of `tag:<cohort>` and each
-   `tag:<cohort>-<login>` (the client can only mint keys for tags it owns).
-3. Apply the policy: `tagOwners` + `groups` + `acls` (shared :8080) + `ssh`
-   (per-employee). See `tailnet-b-acl.example.hujson`.
+   `tag:<cohort>-<login>`, with the Auth Keys (write) + Devices Core (write)
+   scopes (the client can only mint keys for tags it owns; Devices Core is
+   needed for `sandbox-remove-client` to delete the device).
+3. Apply the policy: `tagOwners` + the shared-service `grants` rule + the
+   per-employee `ssh` rules. See `tailnet-b-acl.example.hujson`.
 
 ## Decisions / trade-offs
 
@@ -78,7 +80,5 @@ These cannot be done from the host and must precede provisioning:
 
 ## Out of scope / follow-ups
 
-- Optional: make the shared service port configurable (hard-coded `8080` in
-  docs/ACL today).
 - Optional: automate the tailnet-B policy via the ACL API instead of manual
   edits.
