@@ -12,13 +12,13 @@
     ../../home/yazi.nix
     ../../home/pi.nix
     ../../home/hyprpaper.nix
+    ../../home/musikcube.nix
   ];
 
   home.stateVersion = "25.11";
   programs.home-manager.enable = true;
 
   home.packages = [
-    pkgs.musikcube
     pkgs.telegram-desktop
     pkgs.nicotine-plus
     # Per-user session components — niri spawns these at startup (hyprpaper
