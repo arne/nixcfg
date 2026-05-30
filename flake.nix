@@ -49,10 +49,37 @@
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Image builders — used to generate the Incus/LXC client sandbox image
+    # (packages.<system>.sandbox-{rootfs,metadata}) from images/sandbox.nix.
+    nixos-generators = {
+      url = "github:nix-community/nixos-generators";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, niri, launcher, llm-agents, disko, sops-nix, nix-index-database, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, niri, launcher, llm-agents, disko, sops-nix, nix-index-database, nixos-generators, ... }:
     {
+      # Client sandbox image (Incus/LXC). Build the pair and import into Incus:
+      #   incus image import \
+      #     $(nix build .#sandbox-metadata --print-out-paths)/tarball/*.tar.xz \
+      #     $(nix build .#sandbox-rootfs   --print-out-paths)/tarball/*.tar.xz \
+      #     --alias sandbox
+      # (see hosts/oink/incus/ provisioning in Phase 4). The guest config lives
+      # in images/sandbox.nix; `inputs` are threaded through for claude-code.
+      packages.x86_64-linux =
+        let
+          sandboxArgs = {
+            system = "x86_64-linux";
+            specialArgs = { inherit inputs; };
+            modules = [ ./images/sandbox.nix ];
+          };
+        in
+        {
+          sandbox-rootfs = nixos-generators.nixosGenerate (sandboxArgs // { format = "lxc"; });
+          sandbox-metadata = nixos-generators.nixosGenerate (sandboxArgs // { format = "lxc-metadata"; });
+        };
+
       nixosConfigurations.fox = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         specialArgs = { inherit inputs; };
