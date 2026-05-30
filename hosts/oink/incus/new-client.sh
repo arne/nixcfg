@@ -104,20 +104,27 @@ instance="${free[$((RANDOM % ${#free[@]}))]}"
 echo "==> assigned hostname: ${instance} (${#free[@]}/${#pool[@]} free)"
 
 echo "==> minting a single-use key for ${instance} (${cohort_tag}, ${user_tag})"
+# NB: the Tailscale keys API rejects non-ASCII in `description` ("description
+# had invalid characters"), so keep this plain ASCII — no em-dash.
 key_body="$(jq -n \
-  --arg desc "sandbox ${instance} — ${cohort}/${login}" \
+  --arg desc "sandbox ${instance} (${cohort}/${login})" \
   --arg t1 "$cohort_tag" --arg t2 "$user_tag" \
   '{capabilities:{devices:{create:{reusable:false,ephemeral:false,preauthorized:true,tags:[$t1,$t2]}}},expirySeconds:600,description:$desc}')"
-authkey="$(
-  curl -sS --fail \
+# No --fail here: we want the API's error body. curl/network failure still trips
+# set -e via the empty-key check below.
+mint_resp="$(
+  curl -sS \
     "https://api.tailscale.com/api/v2/tailnet/-/keys" \
     -H "Authorization: Bearer ${access_token}" \
     -H "Content-Type: application/json" \
-    --data-binary "$key_body" | jq -r '.key'
+    --data-binary "$key_body"
 )"
-if [ -z "$authkey" ] || [ "$authkey" = "null" ]; then
-  echo "error: failed to mint auth key — check the OAuth client's scope (auth_keys write)"
-  echo "       and that it OWNS ${cohort_tag} and ${user_tag} (admin console + tagOwners)."
+authkey="$(printf '%s' "$mint_resp" | jq -r '.key // empty')"
+if [ -z "$authkey" ]; then
+  echo "error: failed to mint auth key. Tailscale said:" >&2
+  printf '%s\n' "$mint_resp" | jq -r '.message // .' >&2
+  echo "Check the OAuth client has auth_keys write and OWNS ${cohort_tag} + ${user_tag}" >&2
+  echo "(tagOwners must let the client's tag own them — see cohorts.md)." >&2
   exit 1
 fi
 
