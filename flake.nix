@@ -61,9 +61,9 @@
         ];
       };
 
-      # oink — headless server (gigahost.no, formerly srv2847). No desktop/niri
-      # machinery. disko owns partitioning; ZFS root on sdb, data on sdc, Debian
-      # on sdd left intact as a fallback during the remote cutover.
+      # oink — headless server (gigahost.no). No desktop/niri machinery; disko
+      # owns partitioning (ZFS rpool mirrored across two SSDs, tank data pool
+      # on the 8 TB HDD).
       nixosConfigurations.oink = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         specialArgs = { inherit inputs; };

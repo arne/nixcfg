@@ -6,13 +6,19 @@
   ];
 
   ###########################################################################
-  ## Boot — systemd-boot on the NixOS ESP (sdb). canTouchEfiVariables lets it
-  ## maintain its own UEFI entry; during the remote cutover we drive
-  ## BootOrder/BootNext by hand so Debian on sdd stays the fallback.
+  ## Boot — systemd-boot on rpool-a's ESP (/boot). After each install, the
+  ## entire ESP is mirrored to rpool-b's ESP (/boot-fallback) so it stays
+  ## bit-identical. UEFI's built-in /EFI/BOOT/BOOTX64.EFI fallback on each
+  ## disk's ESP handles the failover if rpool-a dies — no separate Boot####
+  ## entry is required (systemd-boot copies BOOTX64.EFI alongside its own
+  ## loader).
   ###########################################################################
   boot.loader.systemd-boot.enable = true;
   boot.loader.systemd-boot.configurationLimit = 10;
   boot.loader.efi.canTouchEfiVariables = true;
+  boot.loader.systemd-boot.extraInstallCommands = ''
+    ${pkgs.rsync}/bin/rsync -a --delete /boot/ /boot-fallback/
+  '';
 
   ###########################################################################
   ## Networking — static, headless. Matched on MAC (not iface name) via

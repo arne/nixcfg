@@ -1,18 +1,16 @@
 # Declarative disk layout for oink (disko).
 #
-# IMPORTANT: only sdb (root SSD) and sdc (data HDD) are referenced here. The
-# fourth disk, sdd (ata-CT1000MX500SSD1_1927E210DE32), holds the original
-# Debian install and is DELIBERATELY ABSENT so disko never touches it — it
-# stays bootable as the remote-recovery fallback. sda (the 250 GB SSD) is also
-# left untouched/spare for now (future tank L2ARC / special vdev).
-#
-# Root starts as a single-disk rpool on sdb. Once NixOS is trusted and Debian
-# is no longer needed, sdd can be wiped and `zpool attach`ed to mirror rpool.
+# Three SATA devices are managed (by-id, so Linux sdX letters can shuffle):
+#   rpool-a — 1 TB Crucial MX500 SSD, ESP + half of mirrored rpool.
+#   rpool-b — 1 TB Crucial MX500 SSD, ESP (fallback) + half of mirrored rpool.
+#             The fallback ESP is kept in sync by systemd-boot's mirroredBoots
+#             (see hosts/oink/configuration.nix) so the box still boots if
+#             rpool-a dies.
+#   tank    — 8 TB Seagate HDD, single-disk data pool.
 {
   disko.devices = {
     disk = {
-      # sdb — 1 TB Crucial MX500: ESP + rpool (system root)
-      sdb = {
+      rpool-a = {
         type = "disk";
         device = "/dev/disk/by-id/ata-CT1000MX500SSD1_2022E2A66015";
         content = {
@@ -39,8 +37,34 @@
         };
       };
 
-      # sdc — 8 TB Seagate HDD: tank (data)
-      sdc = {
+      rpool-b = {
+        type = "disk";
+        device = "/dev/disk/by-id/ata-CT1000MX500SSD1_1927E210DE32";
+        content = {
+          type = "gpt";
+          partitions = {
+            ESP = {
+              type = "EF00";
+              size = "1G";
+              content = {
+                type = "filesystem";
+                format = "vfat";
+                mountpoint = "/boot-fallback";
+                mountOptions = [ "umask=0077" ];
+              };
+            };
+            zfs = {
+              size = "100%";
+              content = {
+                type = "zfs";
+                pool = "rpool";
+              };
+            };
+          };
+        };
+      };
+
+      tank = {
         type = "disk";
         device = "/dev/disk/by-id/ata-ST8000DM004-2CX188_ZCT02K74";
         content = {
@@ -59,10 +83,10 @@
     };
 
     zpool = {
-      # Root pool — single vdev (no redundancy until sdd is attached later).
+      # Root pool — mirrored across rpool-a and rpool-b.
       rpool = {
         type = "zpool";
-        mode = "";
+        mode = "mirror";
         options.ashift = "12";
         rootFsOptions = {
           compression = "zstd";
