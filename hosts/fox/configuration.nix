@@ -232,8 +232,6 @@
     btrfs-progs
   ];
 
-  nixpkgs.config.allowUnfree = true;
-
   # Default browser so CLI tools (e.g. `claude` auth) open Firefox via xdg-open.
   environment.sessionVariables.BROWSER = "firefox";
 

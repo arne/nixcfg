@@ -1,6 +1,8 @@
 { pkgs, ... }:
 
 {
+  nixpkgs.config.allowUnfree = true;
+
   environment.systemPackages = with pkgs; [
     python3
     go
