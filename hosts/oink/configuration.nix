@@ -58,18 +58,17 @@
   services.tailscale.useRoutingFeatures = "both";
 
   ###########################################################################
-  ## SSH — key-only, our remote lifeline. Root login kept (key only) during
-  ## bring-up; tighten to "no" once `arne` is confirmed working post-cutover.
+  ## SSH — key-only, no root, no passwords (this is our remote lifeline).
   ###########################################################################
   services.openssh = {
     enable = true;
-    settings.PermitRootLogin = "prohibit-password";
+    settings.PermitRootLogin = "no";
     settings.PasswordAuthentication = false;
   };
 
   ###########################################################################
-  ## Users — both the existing server key and the repo (arne@mac) key are
-  ## authorized for arne AND root, so whichever private key is in hand works.
+  ## Users — SSH keys for arne come from the shared list in
+  ## modules/ssh-keys.nix; root SSH is disabled (PermitRootLogin = "no").
   ###########################################################################
   users.users.arne = {
     isNormalUser = true;
@@ -77,17 +76,9 @@
     description = "Arne Skaar Fismen";
     extraGroups = [ "wheel" ];
     shell = pkgs.fish;
-    openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN8r647rf/5m/GEXN1kIccmJItzT1sdI0k4FGYSq5AKi arne@mac"
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJkHOi39HCigHCOneTKIiY+C809n6d3sNHd3hoy2Uq21"
-    ];
+    # SSH keys come from the shared list in modules/ssh-keys.nix (config.mine.sshKeys).
   };
   security.sudo.wheelNeedsPassword = false;
-
-  users.users.root.openssh.authorizedKeys.keys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN8r647rf/5m/GEXN1kIccmJItzT1sdI0k4FGYSq5AKi arne@mac"
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJkHOi39HCigHCOneTKIiY+C809n6d3sNHd3hoy2Uq21"
-  ];
 
   programs.fish.enable = true;
 
@@ -114,21 +105,10 @@
   console.keyMap = "us";
 
   ###########################################################################
-  ## Nix / packages
+  ## Nix / packages — nix experimental-features / trusted-users, the numtide
+  ## cache, and the shared CLI tooling (git/htop/claude-code/…) all live in
+  ## modules/base.nix; oink adds nothing host-specific here.
   ###########################################################################
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
-  nix.settings.trusted-users = [ "root" "arne" ];
-
-  # cache.numtide.com — prebuilt llm-agents.nix (claude-code, codex, …).
-  nix.settings.extra-substituters = [ "https://cache.numtide.com" ];
-  nix.settings.extra-trusted-public-keys = [
-    "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
-  ];
-
-  environment.systemPackages = with pkgs; [
-    # git / wget / curl / htop and other shared CLI tooling live in modules/base.nix.
-    inputs.llm-agents.packages.${pkgs.system}.claude-code  # numtide, rebuilt daily; cached at cache.numtide.com
-  ];
 
   # It's a pig, not a fox.
   motd.animal = "piggy";

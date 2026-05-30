@@ -3,9 +3,10 @@
 # Three SATA devices are managed (by-id, so Linux sdX letters can shuffle):
 #   rpool-a — 1 TB Crucial MX500 SSD, ESP + half of mirrored rpool.
 #   rpool-b — 1 TB Crucial MX500 SSD, ESP (fallback) + half of mirrored rpool.
-#             The fallback ESP is kept in sync by systemd-boot's mirroredBoots
-#             (see hosts/oink/configuration.nix) so the box still boots if
-#             rpool-a dies.
+#             The fallback ESP is kept bit-identical by an rsync in
+#             boot.loader.systemd-boot.extraInstallCommands (see
+#             hosts/oink/configuration.nix) so the box still boots if rpool-a
+#             dies.
 #   tank    — 8 TB Seagate HDD, single-disk data pool.
 {
   disko.devices = {
