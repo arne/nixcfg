@@ -13,12 +13,12 @@
   sops.defaultSopsFile = ../../secrets/oink.yaml;
   sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
 
-  # Auth material for the SEPARATE sandbox tailnet (tailnet B). Consumed by the
-  # per-client provisioning flow (Phase 4) to join client containers to
-  # tailnet B — it is NOT used by oink's own personal-tailnet tailscaled.
-  # Currently a placeholder; replace with a real tag-scoped pre-auth key or
-  # OAuth client secret via `sops secrets/oink.yaml` once tailnet B exists.
-  sops.secrets."tailscale-sandbox/authkey" = {
+  # OAuth client secret for the SEPARATE sandbox tailnet (tailnet B). The
+  # provisioner (hosts/oink/incus/new-client.sh) reads it to mint a fresh,
+  # single-use, tag:client-sandbox auth key per container via the Tailscale
+  # API. It is NOT used by oink's own personal-tailnet tailscaled. Edit with
+  # `sops secrets/oink.yaml`.
+  sops.secrets."tailscale-sandbox/oauth-client-secret" = {
     mode = "0400";
   };
 }
