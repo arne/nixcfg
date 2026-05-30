@@ -3,11 +3,11 @@
 {
   imports = [
     ../../home/fish.nix
+    ../../home/cli.nix
     ../../home/ghostty.nix
     ../../home/helix.nix
     ../../home/firefox.nix
     ../../home/appearance.nix
-    ../../home/motd.nix
     ../../home/yazi.nix
     ../../home/pi.nix
     ../../home/hyprpaper.nix
@@ -28,7 +28,6 @@
   };
 
   home.packages = [
-    pkgs.gh
     pkgs.musikcube
     pkgs.telegram-desktop
     pkgs.nicotine-plus

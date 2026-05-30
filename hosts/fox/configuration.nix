@@ -193,13 +193,7 @@
   ###########################################################################
   services.hardware.bolt.enable = true;
 
-  ###########################################################################
-  ## Tailscale — system service, always on (auth/state restored post-install)
-  ###########################################################################
-  services.tailscale = {
-    enable = true;
-    useRoutingFeatures = "client";
-  };
+  # Tailscale lives in modules/tailscale.nix (shared via base.nix).
 
   ###########################################################################
   ## Fonts
@@ -214,9 +208,7 @@
   ## System packages — desktop deps referenced by the niri config + basics
   ###########################################################################
   environment.systemPackages = with pkgs; [
-    git
-    wget
-    curl
+    # git / wget / curl / htop and other shared CLI tooling live in modules/base.nix.
     inputs.llm-agents.packages.${pkgs.system}.claude-code  # numtide, rebuilt daily; cached at cache.numtide.com (see substituters below)
     xdg-utils          # xdg-open, so `claude` can launch the browser for auth
     # niri config spawns / binds these (hyprpaper/hypridle/hyprlock/dunst live
@@ -231,8 +223,6 @@
     usbutils
     btrfs-progs
   ];
-
-  nixpkgs.config.allowUnfree = true;
 
   # Default browser so CLI tools (e.g. `claude` auth) open Firefox via xdg-open.
   environment.sessionVariables.BROWSER = "firefox";

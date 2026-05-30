@@ -1,5 +1,5 @@
 {
-  description = "Arne's NixOS configuration — multi-host flake (currently: fox)";
+  description = "arne's multi-host flake";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
@@ -28,9 +28,22 @@
     # daily against their own pinned nixpkgs and serves prebuilt outputs from
     # cache.numtide.com — don't `follows = nixpkgs` or every cache hit dies.
     llm-agents.url = "github:numtide/llm-agents.nix";
+
+    # Declarative disk partitioning for the oink server host.
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Prebuilt nix-index database (weekly) so `comma` (`, foo`) can resolve a
+    # binary to its package without us building the index locally first.
+    nix-index-database = {
+      url = "github:nix-community/nix-index-database";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, niri, launcher, llm-agents, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, niri, launcher, llm-agents, disko, nix-index-database, ... }:
     {
       nixosConfigurations.fox = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
@@ -49,8 +62,31 @@
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
             home-manager.backupFileExtension = "hm-bak";
+            home-manager.sharedModules = [ nix-index-database.homeModules.nix-index ];
             home-manager.users.arne = import ./hosts/fox/home.nix;
             home-manager.extraSpecialArgs = { inherit launcher llm-agents; };
+          }
+        ];
+      };
+
+      # oink — headless server (gigahost.no). No desktop/niri machinery; disko
+      # owns partitioning (ZFS rpool mirrored across two SSDs, tank data pool
+      # on the 8 TB HDD).
+      nixosConfigurations.oink = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = { inherit inputs; };
+        modules = [
+          disko.nixosModules.disko
+          ./hosts/oink/disko.nix
+          ./hosts/oink/hardware-configuration.nix
+          ./hosts/oink/configuration.nix
+          home-manager.nixosModules.home-manager
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.backupFileExtension = "hm-bak";
+            home-manager.sharedModules = [ nix-index-database.homeModules.nix-index ];
+            home-manager.users.arne = import ./hosts/oink/home.nix;
           }
         ];
       };
