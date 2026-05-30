@@ -1,0 +1,41 @@
+// Example tailnet-B policy for one cohort ("firsthouse", 5 employees).
+// HuJSON (comments + trailing commas allowed) — paste/merge into the tailnet-B
+// admin console and replace the names/emails with real ones. See cohorts.md.
+//
+// Tag ownership model: the sandbox-new-client OAuth client is assigned ONLY
+// tag:sandbox-provisioner, and every cohort/per-box tag lists that tag as its
+// owner. An OAuth client can stamp a tag only if the tag is owned by one of the
+// client's own tags — owning by autogroup:admin alone does NOT work and yields
+// "requested tags ... are invalid or not permitted". With this scheme,
+// onboarding a new employee is just one more tagOwners line — the OAuth client
+// is never touched again.
+{
+  "tagOwners": {
+    "tag:sandbox-provisioner": ["autogroup:admin"],
+    "tag:firsthouse":          ["tag:sandbox-provisioner"],
+    "tag:firsthouse-alice":    ["tag:sandbox-provisioner"],
+    "tag:firsthouse-bob":      ["tag:sandbox-provisioner"],
+    "tag:firsthouse-carol":    ["tag:sandbox-provisioner"],
+    "tag:firsthouse-dave":     ["tag:sandbox-provisioner"],
+    "tag:firsthouse-erin":     ["tag:sandbox-provisioner"],
+  },
+
+  // Shared services: the rest of the tailnet can reach any cohort box on any
+  // TCP port (HTTP can be served on any port). This also covers box-to-box,
+  // since the boxes are themselves tailnet members. It does NOT widen SSH —
+  // that's gated by the ssh block below (the boxes run only Tailscale SSH, so
+  // even tcp:* to :22 still goes through the ssh policy). Add "udp:*" for
+  // HTTP/3 / QUIC, or use ["*"] for all protocols.
+  "grants": [
+    { "src": ["*"], "dst": ["tag:firsthouse"], "ip": ["tcp:*"] },
+  ],
+
+  // SSH: each employee may land on ONLY their own box, as their own username.
+  "ssh": [
+    { "action": "accept", "src": ["alice@firsthouse.com"], "dst": ["tag:firsthouse-alice"], "users": ["alice"] },
+    { "action": "accept", "src": ["bob@firsthouse.com"],   "dst": ["tag:firsthouse-bob"],   "users": ["bob"] },
+    { "action": "accept", "src": ["carol@firsthouse.com"], "dst": ["tag:firsthouse-carol"], "users": ["carol"] },
+    { "action": "accept", "src": ["dave@firsthouse.com"],  "dst": ["tag:firsthouse-dave"],  "users": ["dave"] },
+    { "action": "accept", "src": ["erin@firsthouse.com"],  "dst": ["tag:firsthouse-erin"],  "users": ["erin"] },
+  ],
+}

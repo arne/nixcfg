@@ -118,8 +118,12 @@
   ## Admin + provisioning tooling.
   ##   sops / ssh-to-age — edit secrets/oink.yaml (the tailnet-B OAuth secret).
   ##   sandbox-setup      — create the egress ACL + client-sandbox profile (idempotent).
-  ##   sandbox-new-client — mint a tailnet-B key + launch one client container.
-  ## The two scripts live in ./incus/ and are packaged with pinned deps.
+  ##   sandbox-new-client — provision one employee box: `--cohort <client>
+  ##                        --user <login>` (random Ghibli hostname, tags,
+  ##                        Tailscale-SSH login). See ./incus/cohorts.md.
+  ##   sandbox-remove-client — deprovision a box: delete the instance + its
+  ##                        tailnet-B device, freeing the hostname.
+  ## The scripts live in ./incus/ and are packaged with pinned deps.
   ###########################################################################
   environment.systemPackages = [
     pkgs.sops
@@ -133,6 +137,11 @@
       name = "sandbox-new-client";
       runtimeInputs = [ config.virtualisation.incus.clientPackage pkgs.jq pkgs.curl ];
       text = builtins.readFile ./incus/new-client.sh;
+    })
+    (pkgs.writeShellApplication {
+      name = "sandbox-remove-client";
+      runtimeInputs = [ config.virtualisation.incus.clientPackage pkgs.jq pkgs.curl ];
+      text = builtins.readFile ./incus/remove-client.sh;
     })
   ];
 }
