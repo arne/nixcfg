@@ -190,6 +190,7 @@
   ###########################################################################
   fonts.packages = with pkgs; [
     nerd-fonts.jetbrains-mono
+    ibm-plex            # IBM Plex Sans — dunst notification font (see home/dunst.nix)
     noto-fonts
     noto-fonts-color-emoji
   ];
