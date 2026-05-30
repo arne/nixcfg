@@ -2,17 +2,22 @@
 // HuJSON (comments + trailing commas allowed) — paste/merge into the tailnet-B
 // admin console and replace the names/emails with real ones. See cohorts.md.
 //
-// Prereq the policy can't express: the OAuth client used by sandbox-new-client
-// must also OWN every tag below (admin console -> OAuth client -> tags), with
-// the Auth Keys (write) + Devices Core (write) scopes.
+// Tag ownership model: the sandbox-new-client OAuth client is assigned ONLY
+// tag:sandbox-provisioner, and every cohort/per-box tag lists that tag as its
+// owner. An OAuth client can stamp a tag only if the tag is owned by one of the
+// client's own tags — owning by autogroup:admin alone does NOT work and yields
+// "requested tags ... are invalid or not permitted". With this scheme,
+// onboarding a new employee is just one more tagOwners line — the OAuth client
+// is never touched again.
 {
   "tagOwners": {
-    "tag:firsthouse":       ["autogroup:admin"],
-    "tag:firsthouse-alice": ["autogroup:admin"],
-    "tag:firsthouse-bob":   ["autogroup:admin"],
-    "tag:firsthouse-carol": ["autogroup:admin"],
-    "tag:firsthouse-dave":  ["autogroup:admin"],
-    "tag:firsthouse-erin":  ["autogroup:admin"],
+    "tag:sandbox-provisioner": ["autogroup:admin"],
+    "tag:firsthouse":          ["tag:sandbox-provisioner"],
+    "tag:firsthouse-alice":    ["tag:sandbox-provisioner"],
+    "tag:firsthouse-bob":      ["tag:sandbox-provisioner"],
+    "tag:firsthouse-carol":    ["tag:sandbox-provisioner"],
+    "tag:firsthouse-dave":     ["tag:sandbox-provisioner"],
+    "tag:firsthouse-erin":     ["tag:sandbox-provisioner"],
   },
 
   // Shared services: the rest of the tailnet can reach any cohort box on any

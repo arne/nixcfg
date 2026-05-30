@@ -59,20 +59,26 @@ These cannot be done from the host and must precede provisioning:
 
 1. Add the employees to tailnet B (users, or node-sharing) — it's the only
    ingress to the boxes.
-2. Grant the tailnet-B **OAuth client** ownership of `tag:<cohort>` and each
-   `tag:<cohort>-<login>`, with the Auth Keys (write) + Devices Core (write)
-   scopes (the client can only mint keys for tags it owns; Devices Core is
-   needed for `sandbox-remove-client` to delete the device).
-3. Apply the policy: `tagOwners` + the shared-service `grants` rule + the
-   per-employee `ssh` rules. See `tailnet-b-acl.example.hujson`.
+2. **OAuth client** (Settings → OAuth clients) with Auth Keys (write) + Devices
+   Core (write) scopes, assigned the single tag `tag:sandbox-provisioner`
+   (Devices Core is needed for `sandbox-remove-client` to delete the device).
+   Put its secret in `tailscale-sandbox/oauth-client-secret` via sops.
+3. Apply the policy (see `tailnet-b-acl.example.hujson`): `tagOwners` making
+   `tag:sandbox-provisioner` own `tag:<cohort>` + each `tag:<cohort>-<login>`,
+   the shared-service `grants` rule, and the per-employee `ssh` rules.
+
+   A tag is mintable by the client only if it's owned by one of the *client's*
+   tags — owning by `autogroup:admin` alone is rejected with "requested tags …
+   are invalid or not permitted". Hence the dedicated `tag:sandbox-provisioner`.
 
 ## Decisions / trade-offs
 
-- **Per-employee tags ⇒ per-employee console setup** (OAuth-client tag list +
-  `tagOwners` + one `ssh` line). Fine for a fixed roster; doesn't scale to
-  churn. The alternative (real `sshd` + injected `authorized_keys`, one cohort
-  tag) was rejected: it drops SSO/MFA and reintroduces key handling, and the
-  employees must be on tailnet B for ingress either way.
+- **Per-employee onboarding = one `tagOwners` line + one `ssh` rule** in the
+  policy (plus inviting the user to tailnet B). The OAuth client is never
+  touched after setup — it owns the single `tag:sandbox-provisioner`, which
+  owns all cohort/per-box tags. The rejected alternative (real `sshd` + injected
+  `authorized_keys`) drops SSO/MFA and reintroduces key handling, and employees
+  must be on tailnet B for ingress either way.
 - **`useradd` is imperative** (relies on the image default `mutableUsers =
   true`). Persists on the box's writable rootfs; not declarative, so an
   in-container `nixos-rebuild` won't know about it. Acceptable for disposable
