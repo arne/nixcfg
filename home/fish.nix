@@ -10,9 +10,8 @@
       { name = "pure"; src = pkgs.fishPlugins.pure.src; }
     ];
 
-    functions = {
-      fish_greeting = "motd";
-    };
+    # fish_greeting is defined system-wide in modules/motd.nix so every user
+    # gets the motd, not just this one.
 
     interactiveShellInit = ''
       # fnm — Node version manager shell integration

@@ -34,9 +34,16 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Prebuilt nix-index database (weekly) so `comma` (`, foo`) can resolve a
+    # binary to its package without us building the index locally first.
+    nix-index-database = {
+      url = "github:nix-community/nix-index-database";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, niri, launcher, llm-agents, disko, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, niri, launcher, llm-agents, disko, nix-index-database, ... }:
     {
       nixosConfigurations.fox = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
@@ -55,6 +62,7 @@
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
             home-manager.backupFileExtension = "hm-bak";
+            home-manager.sharedModules = [ nix-index-database.homeModules.nix-index ];
             home-manager.users.arne = import ./hosts/fox/home.nix;
             home-manager.extraSpecialArgs = { inherit launcher llm-agents; };
           }
@@ -77,6 +85,7 @@
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
             home-manager.backupFileExtension = "hm-bak";
+            home-manager.sharedModules = [ nix-index-database.homeModules.nix-index ];
             home-manager.users.arne = import ./hosts/oink/home.nix;
           }
         ];

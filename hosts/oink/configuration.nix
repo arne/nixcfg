@@ -115,13 +115,12 @@
   ];
 
   environment.systemPackages = with pkgs; [
-    git
-    wget
-    curl
-    htop
-    tmux
+    # git / wget / curl / htop and other shared CLI tooling live in modules/base.nix.
     inputs.llm-agents.packages.${pkgs.system}.claude-code  # numtide, rebuilt daily; cached at cache.numtide.com
   ];
+
+  # It's a pig, not a fox.
+  motd.animal = "piggy";
 
   # First release installed against. Do NOT bump casually.
   system.stateVersion = "25.11";

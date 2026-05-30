@@ -5,16 +5,13 @@
   # firefox / niri are intentionally excluded).
   imports = [
     ../../home/fish.nix
+    ../../home/cli.nix
     ../../home/helix.nix
     ../../home/yazi.nix
-    ../../home/motd.nix
   ];
 
   home.stateVersion = "25.11";
   programs.home-manager.enable = true;
-
-  # It's a pig, not a fox.
-  motd.animal = "piggy";
 
   programs.git = {
     enable = true;
