@@ -35,6 +35,14 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Secrets management (sops + age). Used on oink to ship the sandbox
+    # tailnet's auth material encrypted in-repo; decrypted at activation with
+    # oink's SSH host key. See secrets/ and hosts/oink/secrets.nix.
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Prebuilt nix-index database (weekly) so `comma` (`, foo`) can resolve a
     # binary to its package without us building the index locally first.
     nix-index-database = {
@@ -43,7 +51,7 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, niri, launcher, llm-agents, disko, nix-index-database, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, niri, launcher, llm-agents, disko, sops-nix, nix-index-database, ... }:
     {
       nixosConfigurations.fox = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
@@ -77,6 +85,7 @@
         specialArgs = { inherit inputs; };
         modules = [
           disko.nixosModules.disko
+          sops-nix.nixosModules.sops
           ./hosts/oink/disko.nix
           ./hosts/oink/hardware-configuration.nix
           ./hosts/oink/configuration.nix

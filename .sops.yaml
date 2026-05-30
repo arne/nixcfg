@@ -1,0 +1,21 @@
+# sops-nix encryption policy.
+#
+# Recipients (age):
+#   arne — derived from ~/.ssh/id_ed25519 (admin/author; edits secrets).
+#   oink — derived from /etc/ssh/ssh_host_ed25519_key (decrypts at activation).
+#
+# Add a new host/admin key here AND re-encrypt the affected files:
+#   sops updatekeys secrets/oink.yaml
+#
+# Derive an age recipient from an SSH ed25519 pubkey with:
+#   ssh-to-age < key.pub
+keys:
+  - &arne age1jpzmmw4f98tnrmsqjrh38n42sppcvjp9s2n8cmm4cugh2nwn0fjs4de7cp
+  - &oink age1elegl8s50r7843kcsh34mnaj5muafpsnpafy0mmrnfqy3acspfnqgs2dx5
+
+creation_rules:
+  - path_regex: secrets/oink\.yaml$
+    key_groups:
+      - age:
+          - *arne
+          - *oink
