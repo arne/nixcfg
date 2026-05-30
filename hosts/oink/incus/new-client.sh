@@ -104,10 +104,11 @@ instance="${free[$((RANDOM % ${#free[@]}))]}"
 echo "==> assigned hostname: ${instance} (${#free[@]}/${#pool[@]} free)"
 
 echo "==> minting a single-use key for ${instance} (${cohort_tag}, ${user_tag})"
-# NB: the Tailscale keys API rejects non-ASCII in `description` ("description
-# had invalid characters"), so keep this plain ASCII — no em-dash.
+# NB: the Tailscale keys API only allows [A-Za-z0-9 _-] in `description`
+# (anything else -> "description had invalid characters"): no '/', '(', ')',
+# ':', or non-ASCII. Keep this within that set.
 key_body="$(jq -n \
-  --arg desc "sandbox ${instance} (${cohort}/${login})" \
+  --arg desc "sandbox ${instance} ${cohort}-${login}" \
   --arg t1 "$cohort_tag" --arg t2 "$user_tag" \
   '{capabilities:{devices:{create:{reusable:false,ephemeral:false,preauthorized:true,tags:[$t1,$t2]}}},expirySeconds:600,description:$desc}')"
 # No --fail here: we want the API's error body. curl/network failure still trips
