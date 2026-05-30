@@ -121,7 +121,9 @@
   ##   sandbox-new-client — provision one employee box: `--cohort <client>
   ##                        --user <login>` (random Ghibli hostname, tags,
   ##                        Tailscale-SSH login). See ./incus/cohorts.md.
-  ## The two scripts live in ./incus/ and are packaged with pinned deps.
+  ##   sandbox-remove-client — deprovision a box: delete the instance + its
+  ##                        tailnet-B device, freeing the hostname.
+  ## The scripts live in ./incus/ and are packaged with pinned deps.
   ###########################################################################
   environment.systemPackages = [
     pkgs.sops
@@ -135,6 +137,11 @@
       name = "sandbox-new-client";
       runtimeInputs = [ config.virtualisation.incus.clientPackage pkgs.jq pkgs.curl ];
       text = builtins.readFile ./incus/new-client.sh;
+    })
+    (pkgs.writeShellApplication {
+      name = "sandbox-remove-client";
+      runtimeInputs = [ config.virtualisation.incus.clientPackage pkgs.jq pkgs.curl ];
+      text = builtins.readFile ./incus/remove-client.sh;
     })
   ];
 }

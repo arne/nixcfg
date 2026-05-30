@@ -42,6 +42,17 @@ user `<login>` → join tailnet B → print `ssh <login>@<hostname>`.
 
 Implemented in `hosts/oink/incus/new-client.sh` (this PR).
 
+### Teardown
+
+```
+sudo sandbox-remove-client <hostname> [-y]
+```
+
+Deletes the Incus instance **and** its tailnet-B device, freeing the hostname
+for reuse. Either may be absent (an orphaned device is still cleaned up).
+Prompts before deleting unless `-y`. Requires the OAuth client to have devices
+write scope. Implemented in `hosts/oink/incus/remove-client.sh` (this PR).
+
 ## One-time setup per cohort (external, Tailscale admin console)
 
 These cannot be done from the host and must precede provisioning:
@@ -67,8 +78,6 @@ These cannot be done from the host and must precede provisioning:
 
 ## Out of scope / follow-ups
 
-- `sandbox-remove-client` — deprovision a box, delete its tailnet-B device,
-  free the hostname.
 - Optional: make the shared service port configurable (hard-coded `8080` in
   docs/ACL today).
 - Optional: automate the tailnet-B policy via the ACL API instead of manual
