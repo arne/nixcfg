@@ -3,6 +3,7 @@
 {
   imports = [
     ../../modules/base.nix
+    ./incus.nix
   ];
 
   ###########################################################################
@@ -74,7 +75,7 @@
     isNormalUser = true;
     uid = 1000;
     description = "Arne Skaar Fismen";
-    extraGroups = [ "wheel" ];
+    extraGroups = [ "wheel" "incus-admin" ];  # incus-admin: drive Incus without sudo
     shell = pkgs.fish;
     # SSH keys come from the shared list in modules/ssh-keys.nix (config.mine.sshKeys).
   };

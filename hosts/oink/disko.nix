@@ -1,6 +1,6 @@
 # Declarative disk layout for oink (disko).
 #
-# Three SATA devices are managed (by-id, so Linux sdX letters can shuffle):
+# Four SATA devices are managed (by-id, so Linux sdX letters can shuffle):
 #   rpool-a — 1 TB Crucial MX500 SSD, ESP + half of mirrored rpool.
 #   rpool-b — 1 TB Crucial MX500 SSD, ESP (fallback) + half of mirrored rpool.
 #             The fallback ESP is kept bit-identical by an rsync in
@@ -8,6 +8,9 @@
 #             hosts/oink/configuration.nix) so the box still boots if rpool-a
 #             dies.
 #   tank    — 8 TB Seagate HDD, single-disk data pool.
+#   incus   — 250 GB Crucial MX500 SSD, single-disk pool dedicated to Incus
+#             container storage (see hosts/oink/incus.nix). Single disk = no
+#             redundancy; instances are rebuildable from config.
 {
   disko.devices = {
     disk = {
@@ -81,6 +84,23 @@
           };
         };
       };
+
+      incus = {
+        type = "disk";
+        device = "/dev/disk/by-id/ata-CT250MX500SSD1_1808E10FE5C5";
+        content = {
+          type = "gpt";
+          partitions = {
+            zfs = {
+              size = "100%";
+              content = {
+                type = "zfs";
+                pool = "incus";
+              };
+            };
+          };
+        };
+      };
     };
 
     zpool = {
@@ -120,6 +140,25 @@
         datasets = {
           data = { type = "zfs_fs"; mountpoint = "/tank"; options.mountpoint = "legacy"; };
         };
+      };
+
+      # Incus container storage — single 250 GB SSD, no redundancy. Incus owns
+      # the pool and creates its own datasets under it (containers/, images/,
+      # virtual-machines/, …), so no datasets are declared here. Referenced as
+      # the `default` storage pool's source in hosts/oink/incus.nix.
+      incus = {
+        type = "zpool";
+        mode = "";
+        options.ashift = "12";
+        rootFsOptions = {
+          compression = "zstd";
+          acltype = "posixacl";
+          xattr = "sa";
+          atime = "off";
+          mountpoint = "none";
+          "com.sun:auto-snapshot" = "false";
+        };
+        datasets = { };
       };
     };
   };
