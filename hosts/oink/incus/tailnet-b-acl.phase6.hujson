@@ -1,0 +1,34 @@
+// Tailnet-B policy — Phase 6 (firsthouse self-service portal). FROZEN and
+// headcount-independent: it never changes as trainees come and go (the portal,
+// authenticated by Tailscale identity, is the authority now). This is the
+// reference copy of what is saved in the tailnet-B admin console.
+//
+// Supersedes tailnet-b-acl.example.hujson (Phase 5). Note the tag:firsthouse
+// meaning CHANGED between phases:
+//   * Phase 5: tag:firsthouse = the cohort's BOXES (+ per-employee tags + ssh{}).
+//   * Phase 6: tag:firsthouse = the PORTAL NODE; boxes carry a single tag:sandbox;
+//              no per-user tags, no ssh{} block — shells come via firsthouse →
+//              incus exec.
+//
+// Tag ownership: an OAuth client can stamp a tag only if the tag is owned by one
+// of the client's OWN tags (admin-ownership alone is rejected — proven in Phase
+// 5). So tag:sandbox is owned by tag:sandbox-provisioner (the OAuth client mints
+// the boxes' keys), while tag:firsthouse is owned by autogroup:admin (an admin
+// mints the portal node's key by hand; stored at secrets/oink.yaml ->
+// firsthouse/tailnet-authkey).
+{
+  "tagOwners": {
+    "tag:sandbox-provisioner": ["autogroup:admin"],          // the OAuth client's identity
+    "tag:firsthouse":          ["autogroup:admin"],           // the portal node
+    "tag:sandbox":             ["tag:sandbox-provisioner"],   // the boxes
+  },
+
+  "grants": [
+    // everyone reaches the portal to provision / get a shell
+    { "src": ["autogroup:member"], "dst": ["tag:firsthouse"], "ip": ["tcp:22"] },
+    // everyone sees everyone's web services on any port (the training requirement)
+    { "src": ["autogroup:member"], "dst": ["tag:sandbox"],    "ip": ["tcp:*"] },
+  ],
+
+  // No ssh{} block, no per-user anything. Shells come via firsthouse -> incus exec.
+}
