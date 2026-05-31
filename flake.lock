@@ -151,11 +151,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1780224270,
-        "narHash": "sha256-a/WBVx9PaOlemWngZPfy2TAMreCeFdLhRTCC3k0JXYs=",
+        "lastModified": 1780226076,
+        "narHash": "sha256-NvxDNXxzM1kr93RENX0pN9ddF20HkQGbzkil2lFe8vw=",
         "ref": "refs/heads/main",
-        "rev": "64da433fea265e8aedb5381d269732147315d17b",
-        "revCount": 6,
+        "rev": "e0cb5f5359b8546235b59202a8c9be68377e87b3",
+        "revCount": 7,
         "type": "git",
         "url": "https://code.bas.es/arne/firsthouse"
       },

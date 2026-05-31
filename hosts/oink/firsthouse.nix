@@ -3,55 +3,39 @@
 ###########################################################################
 ## firsthouse (Phase 6) — host instantiation on oink.
 ##
-## The portal system itself (Go app + sandbox image + the NixOS module that
-## defines `services.firsthouse`) lives in its own repo and is pulled in as the
-## `firsthouse` flake input (imported in flake.nix). This file is purely the
-## oink-specific wiring: enable it, hand it oink's secrets and the Incus socket
-## group. See ./firsthouse/DESIGN.md for the picture.
+## The portal system (Go app + sandbox image + the NixOS module defining
+## `services.firsthouse`) lives in its own repo, pulled in as the `firsthouse`
+## flake input. This file is purely oink-specific wiring: enable it, point it at
+## oink's secrets + Incus socket group. The module owns the rest — it imports
+## its own sandbox image and ensures the `client-sandbox` profile on activation
+## (a oneshot before the portal starts), so no manual `incus image import` /
+## `sandbox-setup` is needed. Its network/pool defaults (incusbr0 / default)
+## already match oink, so nothing to override.
 ##
-## External prerequisites (NOT expressible here — do once in the Tailscale
-## admin console / by minting a key):
-##   * tailnet B's policy carries the frozen Phase-6 tagOwners + grants:
-##       tag:sandbox-provisioner -> autogroup:admin
-##       tag:firsthouse          -> autogroup:admin
-##       tag:sandbox             -> tag:sandbox-provisioner
-##       grant member -> tag:firsthouse  tcp:22   (reach the portal)
-##       grant member -> tag:sandbox     tcp:*    (see each other's services)
-##   * the OAuth client (tag:sandbox-provisioner) OWNS tag:sandbox, with
-##     auth_keys + devices write scope (reused from Phase 5);
-##   * a tag:firsthouse auth key is minted and stored at
-##     secrets/oink.yaml -> firsthouse/tailnet-authkey (first join only).
+## External prerequisites (NOT expressible here — Tailscale admin console):
+##   * tailnet B's frozen Phase-6 policy (see ./incus/tailnet-b-acl.phase6.hujson);
+##   * the OAuth client (tag:sandbox-provisioner) OWNS tag:sandbox;
+##   * a tag:firsthouse auth key minted into secrets/oink.yaml (first join only).
 ###########################################################################
 
-let
-  user = config.services.firsthouse.user;
-in
 {
   services.firsthouse = {
     enable = true;
     hostname = "firsthouse";
 
-    # Incus access: same client package + socket group oink's daemon uses, so
-    # the portal can launch / exec / delete sandboxes over the local socket.
+    # Incus access: same client + socket group oink's daemon uses, so the portal
+    # (and the image/profile setup oneshot) can drive the local socket.
     incusGroup = "incus-admin";
     incusPackage = config.virtualisation.incus.clientPackage;
 
-    # The portal's own tailnet-B node identity (tag:firsthouse), first join only.
+    # Secret references (values live encrypted in secrets/oink.yaml). The unit
+    # reads them as root via systemd LoadCredential, so they stay root-owned —
+    # no owner override needed here.
     authKeyFile = config.sops.secrets."firsthouse/tailnet-authkey".path;
-    # Reuses the Phase-5 OAuth client secret to mint tag:sandbox keys for boxes.
     oauthSecretFile = config.sops.secrets."tailscale-sandbox/oauth-client-secret".path;
   };
 
-  # The tag:firsthouse node auth key. Mint manually (or via the OAuth client)
-  # and store with `sops secrets/oink.yaml`; must be readable by the service user.
-  sops.secrets."firsthouse/tailnet-authkey" = {
-    owner = user;
-    mode = "0400";
-  };
-
-  # The OAuth secret already exists (declared in ./secrets.nix, root-owned for
-  # the Phase-5 scripts). The portal runs as an unprivileged user, so it needs
-  # read access too — re-own it to the service user (root, via sudo, still reads
-  # it for the scripts).
-  sops.secrets."tailscale-sandbox/oauth-client-secret".owner = user;
+  # The tag:firsthouse node auth key. Mint manually (or via the OAuth client) and
+  # store with `sops secrets/oink.yaml`; root-owned is fine (LoadCredential).
+  sops.secrets."firsthouse/tailnet-authkey".mode = "0400";
 }
