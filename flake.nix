@@ -52,11 +52,11 @@
 
     # The firsthouse sandbox-portal system (Phase 6) — the Go portal app, the
     # Incus/LXC sandbox guest image, and the NixOS service module all live in
-    # its own repo now. Private repo on code.bas.es, fetched over SSH (arne's
-    # key / a deploy key). Its nixpkgs follows ours; its own llm-agents +
-    # nixos-generators stay pinned upstream (cache hits / image builder).
+    # its own repo now. Public repo on code.bas.es, fetched over plain HTTPS (no
+    # credentials needed, like launcher). Its nixpkgs follows ours; its own
+    # llm-agents + nixos-generators stay pinned upstream (cache hits / image builder).
     firsthouse = {
-      url = "git+ssh://git@code.bas.es:443/arne/firsthouse";
+      url = "git+https://code.bas.es/arne/firsthouse";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

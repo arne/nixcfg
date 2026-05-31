@@ -157,11 +157,11 @@
         "rev": "f27d28090e09cda0e351cc86755b674e283309a2",
         "revCount": 4,
         "type": "git",
-        "url": "ssh://git@code.bas.es:443/arne/firsthouse"
+        "url": "https://code.bas.es/arne/firsthouse"
       },
       "original": {
         "type": "git",
-        "url": "ssh://git@code.bas.es:443/arne/firsthouse"
+        "url": "https://code.bas.es/arne/firsthouse"
       }
     },
     "flake-parts": {
