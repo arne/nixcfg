@@ -96,9 +96,11 @@
         modules = [
           disko.nixosModules.disko
           sops-nix.nixosModules.sops
+          firsthouse.nixosModules.firsthouse
           ./hosts/oink/disko.nix
           ./hosts/oink/hardware-configuration.nix
           ./hosts/oink/configuration.nix
+          ./hosts/oink/firsthouse.nix
           home-manager.nixosModules.home-manager
           {
             home-manager.useGlobalPkgs = true;

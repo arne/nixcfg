@@ -151,11 +151,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1780179311,
-        "narHash": "sha256-bglxpNUeB675AAcEDAopXJMLEl0Hw6k9aHKlxJWATE0=",
+        "lastModified": 1780208601,
+        "narHash": "sha256-ycbKNklXX5y4vppoL0Hf4p6m2FQJICFljuBJDZNREKo=",
         "ref": "refs/heads/main",
-        "rev": "f2d70140ebcf28147cf733cd06d6c7e9ffeedddd",
-        "revCount": 2,
+        "rev": "f27d28090e09cda0e351cc86755b674e283309a2",
+        "revCount": 4,
         "type": "git",
         "url": "ssh://git@code.bas.es:443/arne/firsthouse"
       },
