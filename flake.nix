@@ -50,36 +50,19 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Image builders — used to generate the Incus/LXC client sandbox image
-    # (packages.<system>.sandbox-{rootfs,metadata}) from images/sandbox.nix.
-    nixos-generators = {
-      url = "github:nix-community/nixos-generators";
+    # The firsthouse sandbox-portal system (Phase 6) — the Go portal app, the
+    # Incus/LXC sandbox guest image, and the NixOS service module all live in
+    # its own repo now. Public repo on code.bas.es, fetched over plain HTTPS (no
+    # credentials needed, like launcher). Its nixpkgs follows ours; its own
+    # llm-agents + nixos-generators stay pinned upstream (cache hits / image builder).
+    firsthouse = {
+      url = "git+https://code.bas.es/arne/firsthouse";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, niri, launcher, llm-agents, disko, sops-nix, nix-index-database, nixos-generators, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, niri, launcher, llm-agents, disko, sops-nix, nix-index-database, firsthouse, ... }:
     {
-      # Client sandbox image (Incus/LXC). Build the pair and import into Incus:
-      #   incus image import \
-      #     $(nix build .#sandbox-metadata --print-out-paths)/tarball/*.tar.xz \
-      #     $(nix build .#sandbox-rootfs   --print-out-paths)/tarball/*.tar.xz \
-      #     --alias sandbox
-      # (see hosts/oink/incus/ provisioning in Phase 4). The guest config lives
-      # in images/sandbox.nix; `inputs` are threaded through for claude-code.
-      packages.x86_64-linux =
-        let
-          sandboxArgs = {
-            system = "x86_64-linux";
-            specialArgs = { inherit inputs; };
-            modules = [ ./images/sandbox.nix ];
-          };
-        in
-        {
-          sandbox-rootfs = nixos-generators.nixosGenerate (sandboxArgs // { format = "lxc"; });
-          sandbox-metadata = nixos-generators.nixosGenerate (sandboxArgs // { format = "lxc-metadata"; });
-        };
-
       nixosConfigurations.fox = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         specialArgs = { inherit inputs; };
@@ -90,7 +73,7 @@
           # Backup config.kdl uses 2026-era features (background-effect,
           # maximize-window-to-edges) so pin niri to unstable, not 25.08-stable.
           ({ pkgs, ... }: {
-            programs.niri.package = niri.packages.${pkgs.system}.niri-unstable;
+            programs.niri.package = niri.packages.${pkgs.stdenv.hostPlatform.system}.niri-unstable;
           })
           home-manager.nixosModules.home-manager
           {
@@ -113,9 +96,11 @@
         modules = [
           disko.nixosModules.disko
           sops-nix.nixosModules.sops
+          firsthouse.nixosModules.firsthouse
           ./hosts/oink/disko.nix
           ./hosts/oink/hardware-configuration.nix
           ./hosts/oink/configuration.nix
+          ./hosts/oink/firsthouse.nix
           home-manager.nixosModules.home-manager
           {
             home-manager.useGlobalPkgs = true;

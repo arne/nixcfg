@@ -24,8 +24,8 @@
   home.packages = [
     pkgs.telegram-desktop
     pkgs.nicotine-plus
-    launcher.packages.${pkgs.system}.default
-    llm-agents.packages.${pkgs.system}.pi
+    launcher.packages.${pkgs.stdenv.hostPlatform.system}.default
+    llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.pi
   ];
 
   programs.niri.config = builtins.readFile ../../files/niri/config.kdl;
