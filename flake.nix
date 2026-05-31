@@ -73,7 +73,7 @@
           # Backup config.kdl uses 2026-era features (background-effect,
           # maximize-window-to-edges) so pin niri to unstable, not 25.08-stable.
           ({ pkgs, ... }: {
-            programs.niri.package = niri.packages.${pkgs.system}.niri-unstable;
+            programs.niri.package = niri.packages.${pkgs.stdenv.hostPlatform.system}.niri-unstable;
           })
           home-manager.nixosModules.home-manager
           {

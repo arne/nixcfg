@@ -28,7 +28,7 @@
     jq                                # used by ~/.claude/statusline-command.sh (and generally useful)
     nh                                # nicer nixos-rebuild wrapper (diffs, gc helpers)
     (callPackage ../pkgs/forge.nix { })
-    inputs.llm-agents.packages.${pkgs.system}.claude-code  # numtide, rebuilt daily; cached at cache.numtide.com (see substituters above)
+    inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.claude-code  # numtide, rebuilt daily; cached at cache.numtide.com (see substituters above)
     # motd binary + global config/greeting live in ./motd.nix.
   ];
 
