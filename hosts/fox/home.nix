@@ -25,6 +25,7 @@
   home.packages = [
     pkgs.telegram-desktop
     pkgs.nicotine-plus
+    pkgs.protonmail-desktop   # official Proton Mail app (Electron); paid account
     launcher.packages.${pkgs.stdenv.hostPlatform.system}.default
     llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.pi
   ];
