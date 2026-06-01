@@ -156,6 +156,29 @@
   # Polkit (needed by greetd/niri session bits).
   security.polkit.enable = true;
 
+  ###########################################################################
+  ## Input peripherals — VIA/QMK keyboard access
+  ###########################################################################
+  # wilba.tech WT65-H3 (6582:0036): VIA reconfigures the board over its raw-HID
+  # interface (/dev/hidrawN). Those nodes are root-only by default, so Chromium's
+  # WebHID fails with "NotAllowedError: Failed to open the device" (and then reads
+  # garbage → "invalid protocol version"). uaccess grants the active-seat user an
+  # ACL on the device — the same mechanism that already opens the YubiKey.
+  #
+  # NOTE: this MUST be a < 73-numbered rules file. `services.udev.extraRules`
+  # lands in 99-local.rules, which runs AFTER systemd's 73-seat-late.rules where
+  # the `uaccess` builtin fires — so a TAG+="uaccess" set at 99 is applied too
+  # late and no ACL appears. Shipping it as a package at 60- fixes the ordering.
+  services.udev.packages = [
+    (pkgs.writeTextFile {
+      name = "via-wt65h3-udev-rules";
+      destination = "/lib/udev/rules.d/60-via.rules";
+      text = ''
+        KERNEL=="hidraw*", ATTRS{idVendor}=="6582", ATTRS{idProduct}=="0036", TAG+="uaccess"
+      '';
+    })
+  ];
+
   # dconf daemon — needed for home-manager's dconf.settings (color-scheme
   # preference for cross-toolkit dark mode).
   programs.dconf.enable = true;
