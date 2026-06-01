@@ -1,0 +1,32 @@
+# beets — autotag incoming music against MusicBrainz and file it into the
+# library. home-manager owns this file as a read-only store symlink, so edit
+# it here (not via `beet config --edit`). The mutable library DB lives next to
+# it at ~/.config/beets/library.db (not HM-managed).
+
+# Library root. beets writes tagged copies here under the path format below.
+directory: /srv/music
+library: ~/.config/beets/library.db
+
+import:
+  copy: yes          # keep the original in ~/incoming; write a tagged copy into the library
+  move: no
+  write: yes         # write the matched MusicBrainz metadata into the file tags
+  resume: yes
+  incremental: no
+
+# Reproduce the existing library layout: Artist/Album (Year)/NN - Title.
+# $track is zero-padded to two digits by default (01, 02, …), matching the
+# tracks already in /srv/music.
+paths:
+  default: $albumartist/$album%aunique{} ($year)/$track - $title
+  singleton: $albumartist/Non-Album/$title
+  comp: Various Artists/$album%aunique{} ($year)/$track - $title
+
+# In beets 2.x the MusicBrainz autotagger is a bundled plugin, not core, so it
+# must be listed here or `beet import` finds zero candidates ("No matching
+# release found") and never queries MusicBrainz. An explicit plugins list
+# replaces the default ([musicbrainz]) rather than merging, so name it.
+# No art/lyrics/replaygain fetching, and crucially the `web` plugin stays out —
+# that's the one with CVE-2026-42052 (the reason nixpkgs flags beets 2.5.1
+# insecure; see hosts/fox/configuration.nix). musicbrainz is unrelated to it.
+plugins: [musicbrainz]
