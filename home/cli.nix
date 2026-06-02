@@ -13,9 +13,34 @@
   # GitHub CLI.
   programs.gh.enable = true;
 
+  # lazygit — terminal UI for git (stage hunks, interactive rebase, branch
+  # juggling). `lg` launches it.
+  programs.lazygit.enable = true;
+  programs.fish.shellAbbrs.lg = "lazygit";
+
   # bat — `cat` with syntax highlighting (command is `bat`, not Debian's
   # `batcat`). Also backs helix/yazi previews if they reach for it.
-  programs.bat.enable = true;
+  #
+  # theme = "ansi": highlight with the terminal's 16 ANSI colors, which ghostty
+  # maps to the bases palette (0–15). bat tracks bases for free this way — dark
+  # and light both — with no separate tmTheme file to maintain.
+  programs.bat = {
+    enable = true;
+    config.theme = "ansi";
+  };
+
+  # `cat` → bat. bat auto-detects a non-terminal stdout and falls back to plain,
+  # un-paged output, so `cat f | grep x` and redirects still behave like real cat.
+  programs.fish.shellAliases.cat = "bat";
+
+  # Use bat as the pager. For man pages, col strips the overstrike backspaces and
+  # MANROFFOPT=-c keeps groff output plain so bat renders them cleanly. (bat
+  # guards against PAGER=bat recursion by falling back to less for its own paging.)
+  home.sessionVariables = {
+    PAGER = "bat";
+    MANPAGER = "sh -c 'col -bx | bat --language man --plain'";
+    MANROFFOPT = "-c";
+  };
 
   # zoxide — the "smart cd". `--cmd cd` replaces `cd` itself, so plain `cd foo`
   # jumps to a frecent match; `cdi` is the interactive picker. Fish integration
@@ -25,10 +50,40 @@
     options = [ "--cmd cd" ];
   };
 
+  # eza — modern `ls` (git-status column, tree mode, Nerd Font icons). Its fish
+  # integration auto-creates ls/ll/la/lt/lla abbreviations plus an icons+git
+  # wrapper, all mkDefault so they stay easy to override.
+  programs.eza = {
+    enable = true;
+    icons = "auto";
+    git = true;
+  };
+
+  # fzf — fuzzy finder. The fish integration installs three key bindings:
+  #   Ctrl-R  fuzzy-search shell history
+  #   Ctrl-T  fuzzy-pick file(s)/dir(s) into the command line (with a bat preview)
+  #   Alt-C   fuzzy-pick a directory and cd into it
+  # It also backs zoxide's interactive `cdi` picker. Colors come from the
+  # terminal's ANSI palette (= bases), same trick as bat's ansi theme.
+  programs.fzf = {
+    enable = true;
+    enableFishIntegration = true;
+    defaultOptions = [ "--height=40%" "--layout=reverse" "--border" ];
+    fileWidgetOptions = [ "--preview 'bat --color=always --style=numbers --line-range=:500 {}'" ];
+  };
+
   # nix-index + comma — `, foo` runs `foo` from nixpkgs in a throwaway shell
   # without installing it. The prebuilt index (nix-index-database flake) means
   # it works immediately; no `nix-index` build needed. nix-index also provides
   # a command-not-found handler that suggests the right package/`,` invocation.
   programs.nix-index.enable = true;
   programs.nix-index-database.comma.enable = true;
+
+  # direnv + nix-direnv — auto-load a project's dev shell on cd. Put `use flake`
+  # in a repo's .envrc and entering the dir activates that flake's devShell;
+  # nix-direnv caches it so re-entry is instant. Fish hook is automatic.
+  programs.direnv = {
+    enable = true;
+    nix-direnv.enable = true;
+  };
 }

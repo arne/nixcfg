@@ -19,6 +19,18 @@
     # sandbox so compiling locally fails.
     niri.url = "github:sodiboo/niri-flake";
 
+    # Apple Silicon support (Asahi kernel, Mesa, firmware, asahi-audio).
+    # Canonical home moved from tpwrules to nix-community. The flake ships its
+    # own binary cache — don't `follows = nixpkgs` or every cache hit dies and
+    # we recompile the Asahi kernel locally. Substituter URL + key are in
+    # docs/binary-cache.md.
+    #
+    # PINNED to a specific rev (not `main`) so the kernel/Mesa can't move under
+    # a plain `nix flake update`. The kernel version is governed solely by this
+    # input. To take a newer kernel: bump the rev below, then rebuild (expect a
+    # cache fetch, or a local compile if the cache lacks that build).
+    apple-silicon.url = "github:nix-community/nixos-apple-silicon/7f4b33118d9d2db87b5ce1ad5152bb727a63e340";
+
     launcher = {
       url = "git+https://code.bas.es/arne/launcher";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -61,7 +73,7 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, niri, launcher, llm-agents, disko, sops-nix, nix-index-database, firsthouse, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, niri, apple-silicon, launcher, llm-agents, disko, sops-nix, nix-index-database, firsthouse, ... }:
     {
       nixosConfigurations.fox = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
@@ -82,6 +94,32 @@
             home-manager.backupFileExtension = "hm-bak";
             home-manager.sharedModules = [ nix-index-database.homeModules.nix-index ];
             home-manager.users.arne = import ./hosts/fox/home.nix;
+            home-manager.extraSpecialArgs = { inherit launcher llm-agents; };
+          }
+        ];
+      };
+
+      # air — MacBook Air, Apple Silicon (aarch64), Asahi kernel via the
+      # nix-community/nixos-apple-silicon flake. Same niri/home-manager stack
+      # as fox; per-host niri output config is files/niri/air.kdl.
+      nixosConfigurations.air = nixpkgs.lib.nixosSystem {
+        system = "aarch64-linux";
+        specialArgs = { inherit inputs; };
+        modules = [
+          apple-silicon.nixosModules.apple-silicon-support
+          ./hosts/air/hardware-configuration.nix
+          ./hosts/air/configuration.nix
+          niri.nixosModules.niri
+          ({ pkgs, ... }: {
+            programs.niri.package = niri.packages.${pkgs.stdenv.hostPlatform.system}.niri-unstable;
+          })
+          home-manager.nixosModules.home-manager
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.backupFileExtension = "hm-bak";
+            home-manager.sharedModules = [ nix-index-database.homeModules.nix-index ];
+            home-manager.users.arne = import ./hosts/air/home.nix;
             home-manager.extraSpecialArgs = { inherit launcher llm-agents; };
           }
         ];
