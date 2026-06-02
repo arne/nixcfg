@@ -45,6 +45,19 @@
     options = [ "--cmd cd" ];
   };
 
+  # fzf — fuzzy finder. The fish integration installs three key bindings:
+  #   Ctrl-R  fuzzy-search shell history
+  #   Ctrl-T  fuzzy-pick file(s)/dir(s) into the command line (with a bat preview)
+  #   Alt-C   fuzzy-pick a directory and cd into it
+  # It also backs zoxide's interactive `cdi` picker. Colors come from the
+  # terminal's ANSI palette (= bases), same trick as bat's ansi theme.
+  programs.fzf = {
+    enable = true;
+    enableFishIntegration = true;
+    defaultOptions = [ "--height=40%" "--layout=reverse" "--border" ];
+    fileWidgetOptions = [ "--preview 'bat --color=always --style=numbers --line-range=:500 {}'" ];
+  };
+
   # nix-index + comma — `, foo` runs `foo` from nixpkgs in a throwaway shell
   # without installing it. The prebuilt index (nix-index-database flake) means
   # it works immediately; no `nix-index` build needed. nix-index also provides
