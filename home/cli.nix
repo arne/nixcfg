@@ -13,6 +13,11 @@
   # GitHub CLI.
   programs.gh.enable = true;
 
+  # lazygit — terminal UI for git (stage hunks, interactive rebase, branch
+  # juggling). `lg` launches it.
+  programs.lazygit.enable = true;
+  programs.fish.shellAbbrs.lg = "lazygit";
+
   # bat — `cat` with syntax highlighting (command is `bat`, not Debian's
   # `batcat`). Also backs helix/yazi previews if they reach for it.
   #
@@ -45,6 +50,15 @@
     options = [ "--cmd cd" ];
   };
 
+  # eza — modern `ls` (git-status column, tree mode, Nerd Font icons). Its fish
+  # integration auto-creates ls/ll/la/lt/lla abbreviations plus an icons+git
+  # wrapper, all mkDefault so they stay easy to override.
+  programs.eza = {
+    enable = true;
+    icons = "auto";
+    git = true;
+  };
+
   # fzf — fuzzy finder. The fish integration installs three key bindings:
   #   Ctrl-R  fuzzy-search shell history
   #   Ctrl-T  fuzzy-pick file(s)/dir(s) into the command line (with a bat preview)
@@ -64,4 +78,12 @@
   # a command-not-found handler that suggests the right package/`,` invocation.
   programs.nix-index.enable = true;
   programs.nix-index-database.comma.enable = true;
+
+  # direnv + nix-direnv — auto-load a project's dev shell on cd. Put `use flake`
+  # in a repo's .envrc and entering the dir activates that flake's devShell;
+  # nix-direnv caches it so re-entry is instant. Fish hook is automatic.
+  programs.direnv = {
+    enable = true;
+    nix-direnv.enable = true;
+  };
 }
