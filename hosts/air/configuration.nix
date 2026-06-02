@@ -14,11 +14,13 @@
   boot.loader.systemd-boot.configurationLimit = 10;
   boot.loader.efi.canTouchEfiVariables = false;   # m1n1 owns NVRAM, not EFI
 
-  # Asahi peripheral firmware (Wi-Fi, BT, …). The Asahi installer extracts
-  # this from macOS at install time; drop the resulting bundle into
-  # hosts/air/firmware/ and uncomment. Until then we rely on the prebuilt
-  # firmware shipped by the apple-silicon flake's installer image.
-  # hardware.asahi.peripheralFirmwareDirectory = ./firmware;
+  # Asahi peripheral firmware (Wi-Fi, BT, …). Sourced from the ESP at
+  # /boot/asahi/{all_firmware.tar.gz,kernelcache*}, copied into
+  # hosts/air/firmware/ at install time (see docs/install-air.md). Files
+  # are .gitignored — keep a local copy alongside the flake. Flakes
+  # forbid the impure default (referencing /boot/asahi/ at build time),
+  # so this directory MUST exist before any rebuild.
+  hardware.asahi.peripheralFirmwareDirectory = ./firmware;
 
   # GPU. The conservative driver is the default; flip to the experimental
   # one for noticeably better perf once it's stable on this kernel.
