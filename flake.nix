@@ -20,10 +20,11 @@
     niri.url = "github:sodiboo/niri-flake";
 
     # Apple Silicon support (Asahi kernel, Mesa, firmware, asahi-audio).
-    # Tracks `main` for the freshest kernel/Mesa. The flake ships its own
-    # binary cache (cache.tpwrules.org) — don't `follows = nixpkgs` or every
-    # cache hit dies and we recompile the Asahi kernel locally.
-    apple-silicon.url = "github:tpwrules/nixos-apple-silicon";
+    # Canonical home moved from tpwrules to nix-community. Tracks `main` for
+    # the freshest kernel/Mesa. The flake ships its own binary cache — don't
+    # `follows = nixpkgs` or every cache hit dies and we recompile the Asahi
+    # kernel locally. Substituter URL + key are in docs/binary-cache.md.
+    apple-silicon.url = "github:nix-community/nixos-apple-silicon";
 
     launcher = {
       url = "git+https://code.bas.es/arne/launcher";
@@ -93,8 +94,8 @@
         ];
       };
 
-      # air — MacBook Air, Apple Silicon (aarch64), Asahi kernel via
-      # tpwrules' nixos-apple-silicon flake. Same niri/home-manager stack
+      # air — MacBook Air, Apple Silicon (aarch64), Asahi kernel via the
+      # nix-community/nixos-apple-silicon flake. Same niri/home-manager stack
       # as fox; per-host niri output config is files/niri/air.kdl.
       nixosConfigurations.air = nixpkgs.lib.nixosSystem {
         system = "aarch64-linux";

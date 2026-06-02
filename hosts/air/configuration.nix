@@ -161,7 +161,7 @@
   #   TODO: add the apple-silicon flake's binary cache before the first
   #   rebuild, or building will compile the Asahi kernel + Mesa locally.
   #   Pull the substituter URL and public key from the upstream README:
-  #     https://github.com/tpwrules/nixos-apple-silicon#binary-cache
+  #     https://github.com/nix-community/nixos-apple-silicon/blob/main/docs/binary-cache.md
   nix.settings.extra-substituters = [
     "https://niri.cachix.org"
   ];
