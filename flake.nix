@@ -20,11 +20,16 @@
     niri.url = "github:sodiboo/niri-flake";
 
     # Apple Silicon support (Asahi kernel, Mesa, firmware, asahi-audio).
-    # Canonical home moved from tpwrules to nix-community. Tracks `main` for
-    # the freshest kernel/Mesa. The flake ships its own binary cache — don't
-    # `follows = nixpkgs` or every cache hit dies and we recompile the Asahi
-    # kernel locally. Substituter URL + key are in docs/binary-cache.md.
-    apple-silicon.url = "github:nix-community/nixos-apple-silicon";
+    # Canonical home moved from tpwrules to nix-community. The flake ships its
+    # own binary cache — don't `follows = nixpkgs` or every cache hit dies and
+    # we recompile the Asahi kernel locally. Substituter URL + key are in
+    # docs/binary-cache.md.
+    #
+    # PINNED to a specific rev (not `main`) so the kernel/Mesa can't move under
+    # a plain `nix flake update`. The kernel version is governed solely by this
+    # input. To take a newer kernel: bump the rev below, then rebuild (expect a
+    # cache fetch, or a local compile if the cache lacks that build).
+    apple-silicon.url = "github:nix-community/nixos-apple-silicon/7f4b33118d9d2db87b5ce1ad5152bb727a63e340";
 
     launcher = {
       url = "git+https://code.bas.es/arne/launcher";
