@@ -126,6 +126,20 @@
   hardware.bluetooth.powerOnBoot = true;
 
   ###########################################################################
+  ## Keyboard — Caps Lock acts as Control when held, Escape when tapped.
+  ## keyd remaps at the evdev level (below the compositor), so this works in
+  ## niri, the TTYs, and the greeter alike — unlike an xkb `ctrl:nocaps`
+  ## option, which can only do the plain Caps→Control half.
+  ###########################################################################
+  services.keyd = {
+    enable = true;
+    keyboards.default = {
+      ids = [ "*" ];
+      settings.main.capslock = "overload(control, esc)";
+    };
+  };
+
+  ###########################################################################
   ## Fonts
   ###########################################################################
   fonts.packages = with pkgs; [
