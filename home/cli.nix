@@ -15,7 +15,27 @@
 
   # bat — `cat` with syntax highlighting (command is `bat`, not Debian's
   # `batcat`). Also backs helix/yazi previews if they reach for it.
-  programs.bat.enable = true;
+  #
+  # theme = "ansi": highlight with the terminal's 16 ANSI colors, which ghostty
+  # maps to the bases palette (0–15). bat tracks bases for free this way — dark
+  # and light both — with no separate tmTheme file to maintain.
+  programs.bat = {
+    enable = true;
+    config.theme = "ansi";
+  };
+
+  # `cat` → bat. bat auto-detects a non-terminal stdout and falls back to plain,
+  # un-paged output, so `cat f | grep x` and redirects still behave like real cat.
+  programs.fish.shellAliases.cat = "bat";
+
+  # Use bat as the pager. For man pages, col strips the overstrike backspaces and
+  # MANROFFOPT=-c keeps groff output plain so bat renders them cleanly. (bat
+  # guards against PAGER=bat recursion by falling back to less for its own paging.)
+  home.sessionVariables = {
+    PAGER = "bat";
+    MANPAGER = "sh -c 'col -bx | bat --language man --plain'";
+    MANROFFOPT = "-c";
+  };
 
   # zoxide — the "smart cd". `--cmd cd` replaces `cd` itself, so plain `cd foo`
   # jumps to a frecent match; `cdi` is the interactive picker. Fish integration
