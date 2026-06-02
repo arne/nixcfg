@@ -7,9 +7,3 @@ CLAUDE.md
 
 # Local Claude Code state (per-machine, not shared)
 .claude/
-
-# Asahi peripheral firmware for `air` — large per-machine blobs copied from the
-# ESP at install time (see hosts/air/configuration.nix). Keep the dir, not the
-# blobs.
-hosts/air/firmware/*
-!hosts/air/firmware/.gitkeep

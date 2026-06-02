@@ -23,9 +23,9 @@ point Fedora is gone.
 - `/var/lib/nixos-install-backup/` has a tar of the ESP and a copy of
   `grubenv`, in case we need to roll back.
 - The `air-scaffold` branch of `arne/nixcfg` has the air host scaffold,
-  the `nix-community` apple-silicon URL, `peripheralFirmwareDirectory =
-  ./firmware`, the ext4 hardware-configuration.nix placeholder, and the
-  firmware/.gitignore. No firmware blobs in git.
+  the `nix-community` apple-silicon URL, and the ext4
+  hardware-configuration.nix placeholder. Peripheral firmware is read
+  impurely from `/boot/asahi` at build time — no firmware blobs in git.
 
 ## macOS safety check
 
@@ -121,28 +121,24 @@ ls /mnt/boot/                                       # asahi/ m1n1/ vendorfw/ ubo
 systemd-boot will install itself into `EFI/BOOT/` and `loader/` during
 `nixos-install`.
 
-## Step 8 — clone the flake + drop in firmware
+## Step 8 — clone the flake
 
 ```sh
 nix-shell -p git
 # you are now in a sub-shell with git available
-git clone -b air-scaffold https://github.com/arne/nixcfg /mnt/etc/nixos
-cp /mnt/boot/asahi/all_firmware.tar.gz       /mnt/etc/nixos/hosts/air/firmware/
-cp /mnt/boot/asahi/kernelcache.release.mac13g /mnt/etc/nixos/hosts/air/firmware/
-ls -lh /mnt/etc/nixos/hosts/air/firmware/   # expect ~28M + ~25M
-
-cd /mnt/etc/nixos
-git -c user.email=install@air -c user.name=installer add hosts/air/firmware
+git clone https://github.com/arne/nixcfg /mnt/etc/nixos
 ```
 
-The `git add` matters: flakes only see git-tracked files, so untracked
-firmware blobs would be invisible at build time. Staging-without-committing
-makes them part of the flake source.
+No firmware copying needed: the config doesn't pin
+`hardware.asahi.peripheralFirmwareDirectory`, so the apple-silicon module
+reads its default location — here `/mnt/boot/asahi` (the mounted ESP) — at
+build time. That's an absolute path outside the flake, so the build runs
+impure (`--impure` below). The firmware never enters the repo.
 
 ## Step 9 — install
 
 ```sh
-nixos-install --flake /mnt/etc/nixos#air --no-channel-copy
+nixos-install --flake /mnt/etc/nixos#air --no-channel-copy --impure
 ```
 
 Expect a long wait. The flake doesn't have the apple-silicon binary cache
