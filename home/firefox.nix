@@ -30,8 +30,20 @@
       '';
 
       search = {
-        default = "Google";
+        default = "Kagi";
         force = true;
+
+        engines."Kagi" = {
+          urls = [{
+            template = "https://kagi.com/search";
+            params = [
+              { name = "q"; value = "{searchTerms}"; }
+            ];
+          }];
+          icon = "https://kagi.com/favicon.ico";
+          updateInterval = 24 * 60 * 60 * 1000; # refresh the icon daily
+          definedAliases = [ "@kagi" ];
+        };
       };
     };
   };
