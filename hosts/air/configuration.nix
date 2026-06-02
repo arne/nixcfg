@@ -34,6 +34,9 @@
   networking.firewall.enable = true;
   networking.firewall.allowedTCPPorts = [ 22 ];
 
+  # It's a cat, not a fox.
+  motd.animal = "cat";
+
   ###########################################################################
   ## Locale / time
   ###########################################################################
@@ -44,10 +47,10 @@
   ###########################################################################
   ## Power — laptop. Sleep on lid close, suspend on idle.
   ###########################################################################
-  services.logind = {
-    lidSwitch = "suspend";
-    lidSwitchExternalPower = "suspend";
-    lidSwitchDocked = "ignore";
+  services.logind.settings.Login = {
+    HandleLidSwitch = "suspend";
+    HandleLidSwitchExternalPower = "suspend";
+    HandleLidSwitchDocked = "ignore";
   };
   # Suspend support on Asahi is still shallow (s2idle only) but works.
   # Don't disable the sleep targets here the way fox does.
@@ -85,7 +88,7 @@
     enable = true;
     settings = {
       default_session = {
-        command = "${pkgs.greetd.tuigreet}/bin/tuigreet --time --remember --cmd niri-session";
+        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd niri-session";
         user = "greeter";
       };
     };
