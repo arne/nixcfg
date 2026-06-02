@@ -19,6 +19,12 @@
     # sandbox so compiling locally fails.
     niri.url = "github:sodiboo/niri-flake";
 
+    # Apple Silicon support (Asahi kernel, Mesa, firmware, asahi-audio).
+    # Tracks `main` for the freshest kernel/Mesa. The flake ships its own
+    # binary cache (cache.tpwrules.org) — don't `follows = nixpkgs` or every
+    # cache hit dies and we recompile the Asahi kernel locally.
+    apple-silicon.url = "github:tpwrules/nixos-apple-silicon";
+
     launcher = {
       url = "git+https://code.bas.es/arne/launcher";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -61,7 +67,7 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, niri, launcher, llm-agents, disko, sops-nix, nix-index-database, firsthouse, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, niri, apple-silicon, launcher, llm-agents, disko, sops-nix, nix-index-database, firsthouse, ... }:
     {
       nixosConfigurations.fox = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
@@ -82,6 +88,32 @@
             home-manager.backupFileExtension = "hm-bak";
             home-manager.sharedModules = [ nix-index-database.homeModules.nix-index ];
             home-manager.users.arne = import ./hosts/fox/home.nix;
+            home-manager.extraSpecialArgs = { inherit launcher llm-agents; };
+          }
+        ];
+      };
+
+      # air — MacBook Air, Apple Silicon (aarch64), Asahi kernel via
+      # tpwrules' nixos-apple-silicon flake. Same niri/home-manager stack
+      # as fox; per-host niri output config is files/niri/air.kdl.
+      nixosConfigurations.air = nixpkgs.lib.nixosSystem {
+        system = "aarch64-linux";
+        specialArgs = { inherit inputs; };
+        modules = [
+          apple-silicon.nixosModules.apple-silicon-support
+          ./hosts/air/hardware-configuration.nix
+          ./hosts/air/configuration.nix
+          niri.nixosModules.niri
+          ({ pkgs, ... }: {
+            programs.niri.package = niri.packages.${pkgs.stdenv.hostPlatform.system}.niri-unstable;
+          })
+          home-manager.nixosModules.home-manager
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.backupFileExtension = "hm-bak";
+            home-manager.sharedModules = [ nix-index-database.homeModules.nix-index ];
+            home-manager.users.arne = import ./hosts/air/home.nix;
             home-manager.extraSpecialArgs = { inherit launcher llm-agents; };
           }
         ];

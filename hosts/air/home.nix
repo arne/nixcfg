@@ -15,8 +15,6 @@
     ../../home/hypridle.nix
     ../../home/hyprlock.nix
     ../../home/dunst.nix
-    ../../home/musikcube.nix
-    ../../home/beets.nix
   ];
 
   home.stateVersion = "25.11";
@@ -24,13 +22,11 @@
 
   home.packages = [
     pkgs.telegram-desktop
-    pkgs.nicotine-plus
-    pkgs.protonmail-desktop   # official Proton Mail app (Electron); paid account
     launcher.packages.${pkgs.stdenv.hostPlatform.system}.default
     llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.pi
   ];
 
   programs.niri.config =
     builtins.readFile ../../files/niri/common.kdl
-    + builtins.readFile ../../files/niri/fox.kdl;
+    + builtins.readFile ../../files/niri/air.kdl;
 }
