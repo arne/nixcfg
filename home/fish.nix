@@ -10,6 +10,23 @@
       { name = "pure"; src = pkgs.fishPlugins.pure.src; }
     ];
 
+    # `rebuild` — rebuild the current host from the flake, anywhere, on any OS.
+    # Lives in home-manager (not a NixOS module) so it works identically on
+    # NixOS and nix-darwin. ~/.nixcfg is the consistent checkout path on both;
+    # the config attr is left implicit so nixos-rebuild/darwin-rebuild pick the
+    # entry matching this machine's hostname. Extra args pass through, e.g.
+    # `rebuild boot` or `rebuild test`.
+    functions.rebuild = ''
+      set -l action $argv
+      test (count $argv) -eq 0; and set action switch
+      switch (uname)
+        case Darwin
+          sudo darwin-rebuild $action --flake ~/.nixcfg
+        case '*'
+          sudo nixos-rebuild $action --flake ~/.nixcfg
+      end
+    '';
+
     # fish_greeting is defined system-wide in modules/motd.nix so every user
     # gets the motd, not just this one.
 
