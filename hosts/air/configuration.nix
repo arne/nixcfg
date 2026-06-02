@@ -160,15 +160,17 @@
 
   # Binary caches.
   #   niri.cachix.org — prebuilt niri (same as fox).
-  #   TODO: add the apple-silicon flake's binary cache before the first
-  #   rebuild, or building will compile the Asahi kernel + Mesa locally.
+  #   apple-silicon.cachix.org added below (resolves the prior TODO); kernel
+  #   still compiles if the cache lacks this exact nixpkgs build.
   #   Pull the substituter URL and public key from the upstream README:
   #     https://github.com/nix-community/nixos-apple-silicon/blob/main/docs/binary-cache.md
   nix.settings.extra-substituters = [
     "https://niri.cachix.org"
+    "https://nixos-apple-silicon.cachix.org"
   ];
   nix.settings.extra-trusted-public-keys = [
     "niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964="
+    "nixos-apple-silicon.cachix.org-1:8psDu5SA5dAD7qA0zMy5UT292TxeEPzIz8VVEr2Js20="
   ];
 
   system.stateVersion = "25.11";
