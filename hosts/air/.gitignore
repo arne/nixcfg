@@ -1,6 +1,0 @@
-# Asahi peripheral firmware is host-specific and ~53 MB. The two files come
-# from the ESP at /boot/asahi/ after running the Asahi installer in macOS;
-# they don't belong in git history. Keep the directory present (via
-# firmware/.gitkeep) so the flake's `./firmware` path resolves.
-firmware/*
-!firmware/.gitkeep

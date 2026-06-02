@@ -14,13 +14,13 @@
   boot.loader.systemd-boot.configurationLimit = 10;
   boot.loader.efi.canTouchEfiVariables = false;   # m1n1 owns NVRAM, not EFI
 
-  # Asahi peripheral firmware (Wi-Fi, BT, …). Sourced from the ESP at
-  # /boot/asahi/{all_firmware.tar.gz,kernelcache*}, copied into
-  # hosts/air/firmware/ at install time (see docs/install-air.md). Files
-  # are .gitignored — keep a local copy alongside the flake. Flakes
-  # forbid the impure default (referencing /boot/asahi/ at build time),
-  # so this directory MUST exist before any rebuild.
-  hardware.asahi.peripheralFirmwareDirectory = ./firmware;
+  # Asahi peripheral firmware (Wi-Fi, BT, …) lives on the ESP at /boot/asahi/
+  # (placed there by the Asahi installer; see docs/install-air.md). It's a
+  # ~52 MB, host-specific, non-redistributable blob, so we keep it OUT of the
+  # flake entirely and let the apple-silicon module read its default location
+  # directly. Reading an absolute path needs impure eval, so `air` rebuilds
+  # pass --impure (handled by the `rebuild` shell function).
+  # hardware.asahi.peripheralFirmwareDirectory defaults to /boot/asahi — unset.
 
   # GPU. The conservative driver is the default; flip to the experimental
   # one for noticeably better perf once it's stable on this kernel.

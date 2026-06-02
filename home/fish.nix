@@ -23,7 +23,11 @@
         case Darwin
           sudo darwin-rebuild $action --flake ~/.nixcfg
         case '*'
-          sudo nixos-rebuild $action --flake ~/.nixcfg
+          # `air` keeps its Asahi firmware out of the flake and reads it from
+          # /boot/asahi, which needs impure eval. Other hosts stay pure.
+          set -l extra
+          test (hostname) = air; and set extra --impure
+          sudo nixos-rebuild $action --flake ~/.nixcfg $extra
       end
     '';
 
