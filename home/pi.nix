@@ -10,6 +10,6 @@
   # can't mutate it — change defaults by editing this file instead.
   home.file.".pi/agent/settings.json".text = builtins.toJSON {
     defaultProvider = "ollama";
-    defaultModel = "qwen3.6:35b";
+    defaultModel = "qwen3.6:27b";
   };
 }
