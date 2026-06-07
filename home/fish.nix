@@ -31,6 +31,32 @@
       end
     '';
 
+    # `clip` — copy a file's contents (or stdin) to the system clipboard.
+    # Picks the backend at runtime so the same definition works on Wayland
+    # (wl-copy), X11 (xclip/xsel) and macOS (pbcopy). Usage: `clip file`,
+    # `cat file | clip`, or `echo foo | clip`.
+    functions.clip = ''
+      set -l copy
+      if type -q wl-copy
+        set copy wl-copy
+      else if type -q xclip
+        set copy xclip -selection clipboard
+      else if type -q xsel
+        set copy xsel --clipboard --input
+      else if type -q pbcopy
+        set copy pbcopy
+      else
+        echo "clip: fant ingen clipboard-kommando (wl-copy/xclip/xsel/pbcopy)" >&2
+        return 1
+      end
+
+      if test (count $argv) -gt 0
+        command $copy <$argv[1]
+      else
+        command $copy
+      end
+    '';
+
     # fish_greeting is defined system-wide in modules/motd.nix so every user
     # gets the motd, not just this one.
 

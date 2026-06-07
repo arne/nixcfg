@@ -3,6 +3,7 @@
 {
   imports = [
     ../../modules/base.nix
+    ../../modules/desktop.nix
     ./llama.nix
     ./openwebui.nix
   ];
@@ -114,10 +115,8 @@
   programs.fish.enable = true;
 
   ###########################################################################
-  ## Desktop — niri (via niri-flake module) behind greetd + tuigreet
+  ## Desktop — niri (enabled in modules/desktop.nix) behind greetd
   ###########################################################################
-  programs.niri.enable = true;
-
   services.greetd = {
     enable = true;
     settings = {
@@ -125,6 +124,19 @@
       # tiled+DSC Studio Display (fbcon limitation) — only a Wayland compositor
       # drives it. So we autologin niri directly; revisit a Wayland greeter
       # (ReGreet/cage) later if a login gate is wanted.
+      #
+      # MUST be initial_session, not default_session: default_session runs niri
+      # *as the greeter*, so logind classes the session "greeter", which it
+      # refuses to lock ("Session does not support lock screen"). That makes
+      # `loginctl lock-session` — used by hypridle for idle- and sleep-locking —
+      # a silent no-op. initial_session autologins as a real *user* session,
+      # which logind will lock. (default_session is still required by greetd as
+      # the greeter shown after logout; re-running niri-session keeps the
+      # Studio Display driveable until a Wayland greeter is wired up.)
+      initial_session = {
+        command = "niri-session";
+        user = "arne";
+      };
       default_session = {
         command = "niri-session";
         user = "arne";
@@ -132,29 +144,19 @@
     };
   };
 
-  # Portals for screenshots/screencast/file pickers under niri.
-  # Without xdg.portal.config, xdg-desktop-portal doesn't know which backend
-  # handles each interface — GTK FileChooser requests then fall through to
-  # xdg-open, which on niri ends up launching whatever handles inode/directory
-  # (Firefox by default; yazi after the override). Force gtk for everything.
-  xdg.portal = {
-    enable = true;
-    extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
-    config.niri.default = [ "gtk" ];
-  };
+  # The shared Wayland desktop surface (niri, xdg.portal, PipeWire base, polkit,
+  # dconf, fonts, GUI packages) lives in modules/desktop.nix. fox only adds the
+  # 32-bit ALSA plugin on top — Steam/Proton need it, and it's x86-only (needs
+  # enable32Bit graphics), so it can't live in the module that air also imports.
+  services.pipewire.alsa.support32Bit = true;
 
-  # PipeWire audio.
-  services.pulseaudio.enable = false;
-  security.rtkit.enable = true;
-  services.pipewire = {
-    enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
-    pulse.enable = true;
-  };
-
-  # Polkit (needed by greetd/niri session bits).
-  security.polkit.enable = true;
+  # PAM service for hyprlock. nixpkgs ships a default security.pam.services
+  # entry for swaylock but NOT for hyprlock, and home-manager's
+  # programs.hyprlock only writes the config — it can't create system PAM.
+  # Without /etc/pam.d/hyprlock, PAM auth always fails: you can lock the
+  # screen but never unlock it (the typed password is rejected). This gives
+  # hyprlock the standard pam_unix stack, same as swaylock.
+  security.pam.services.hyprlock = {};
 
   ###########################################################################
   ## Input peripherals — VIA/QMK keyboard access
@@ -179,9 +181,7 @@
     })
   ];
 
-  # dconf daemon — needed for home-manager's dconf.settings (color-scheme
-  # preference for cross-toolkit dark mode).
-  programs.dconf.enable = true;
+  # programs.dconf.enable is set in modules/desktop.nix.
 
   ###########################################################################
   ## SSH — key-only, no root, no passwords (this is our remote lifeline)
@@ -192,11 +192,7 @@
     settings.PasswordAuthentication = false;
   };
 
-  ###########################################################################
-  ## Bluetooth (for the wireless mouse, etc.)
-  ###########################################################################
-  hardware.bluetooth.enable = true;
-  hardware.bluetooth.powerOnBoot = true;
+  # hardware.bluetooth (wireless mouse, etc.) is enabled in modules/desktop.nix.
 
   ###########################################################################
   ## Thunderbolt / USB4 — the Apple Studio Display connects over USB4, and
@@ -208,45 +204,9 @@
 
   # Tailscale lives in modules/tailscale.nix (shared via base.nix).
 
-  ###########################################################################
-  ## Fonts
-  ###########################################################################
-  fonts.packages = with pkgs; [
-    nerd-fonts.jetbrains-mono
-    ibm-plex            # IBM Plex Sans — dunst notification font (see home/dunst.nix)
-    noto-fonts
-    noto-fonts-color-emoji
-  ];
-
-  ###########################################################################
-  ## System packages — desktop deps referenced by the niri config + basics
-  ###########################################################################
-  environment.systemPackages = with pkgs; [
-    # git / wget / curl / htop / claude-code and other shared CLI tooling live
-    # in modules/base.nix.
-    xdg-utils          # xdg-open, so `claude` can launch the browser for auth
-    # niri config spawns / binds these (hyprpaper/hypridle/hyprlock/dunst live
-    # in home-manager — they're per-user session components):
-    brightnessctl
-    wl-clipboard
-    cliphist
-    xwayland-satellite
-    # diagnostics
-    vulkan-tools
-    pciutils
-    usbutils
-    btrfs-progs
-  ];
-
-  # Default browser so CLI tools (e.g. `claude` auth) open Firefox via xdg-open.
-  environment.sessionVariables.BROWSER = "firefox";
-
-  # Default terminal so apps that consult $TERMINAL (and xdg-terminal-exec
-  # via the per-user xdg-terminals.list in home/ghostty.nix) launch ghostty.
-  environment.sessionVariables.TERMINAL = "ghostty";
-
-  # nix experimental-features / trusted-users / the numtide cache are shared
-  # via modules/base.nix.
+  # Fonts, the Wayland/desktop system packages, and the BROWSER/TERMINAL
+  # defaults are shared via modules/desktop.nix. nix experimental-features /
+  # trusted-users / the numtide cache are shared via modules/base.nix.
 
   # Garbage-collect generations older than 14 days, weekly. `persistent` makes
   # the timer catch up if the box is off when it would normally fire.
@@ -259,15 +219,8 @@
   # Hardlink identical store paths after each build to save disk.
   nix.optimise.automatic = true;
 
-  # Binary caches (numtide cache is shared via modules/base.nix):
-  #   niri.cachix.org — prebuilt niri (its check-phase EGL test aborts in the
-  #     build sandbox, so compiling locally fails).
-  nix.settings.extra-substituters = [
-    "https://niri.cachix.org"
-  ];
-  nix.settings.extra-trusted-public-keys = [
-    "niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964="
-  ];
+  # Binary caches: niri.cachix.org is added by modules/desktop.nix; the numtide
+  # cache is shared via modules/base.nix.
 
   # First release installed against. Do NOT bump casually.
   system.stateVersion = "25.11";

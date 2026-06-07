@@ -81,12 +81,8 @@
         modules = [
           ./hosts/fox/hardware-configuration.nix
           ./hosts/fox/configuration.nix
-          niri.nixosModules.niri
-          # Backup config.kdl uses 2026-era features (background-effect,
-          # maximize-window-to-edges) so pin niri to unstable, not 25.08-stable.
-          ({ pkgs, ... }: {
-            programs.niri.package = niri.packages.${pkgs.stdenv.hostPlatform.system}.niri-unstable;
-          })
+          # niri module + unstable-pin + the rest of the Wayland desktop surface
+          # are shared via modules/desktop.nix, imported from fox's configuration.nix.
           home-manager.nixosModules.home-manager
           {
             home-manager.useGlobalPkgs = true;
@@ -109,10 +105,8 @@
           apple-silicon.nixosModules.apple-silicon-support
           ./hosts/air/hardware-configuration.nix
           ./hosts/air/configuration.nix
-          niri.nixosModules.niri
-          ({ pkgs, ... }: {
-            programs.niri.package = niri.packages.${pkgs.stdenv.hostPlatform.system}.niri-unstable;
-          })
+          # niri module + unstable-pin + the rest of the Wayland desktop surface
+          # are shared via modules/desktop.nix, imported from air's configuration.nix.
           home-manager.nixosModules.home-manager
           {
             home-manager.useGlobalPkgs = true;

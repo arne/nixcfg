@@ -3,6 +3,7 @@
 {
   imports = [
     ../../modules/base.nix
+    ../../modules/desktop.nix
   ];
 
   ###########################################################################
@@ -80,10 +81,8 @@
   programs.fish.enable = true;
 
   ###########################################################################
-  ## Desktop — niri behind greetd + tuigreet (real login prompt).
+  ## Desktop — niri (enabled in modules/desktop.nix) behind greetd + tuigreet.
   ###########################################################################
-  programs.niri.enable = true;
-
   services.greetd = {
     enable = true;
     settings = {
@@ -94,27 +93,9 @@
     };
   };
 
-  # Portals — see hosts/fox/configuration.nix for the rationale (gtk handles
-  # FileChooser so xdg-open doesn't fall through to the default mime handler).
-  xdg.portal = {
-    enable = true;
-    extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
-    config.niri.default = [ "gtk" ];
-  };
-
-  # PipeWire audio. asahi-audio (speaker DSP + calibration) is pulled in by
-  # the apple-silicon module; PipeWire is the consumer.
-  services.pulseaudio.enable = false;
-  security.rtkit.enable = true;
-  services.pipewire = {
-    enable = true;
-    alsa.enable = true;
-    pulse.enable = true;
-  };
-
-  security.polkit.enable = true;
-
-  programs.dconf.enable = true;
+  # asahi-audio (speaker DSP + calibration) is pulled in by the apple-silicon
+  # module; PipeWire is the consumer. The shared PipeWire/portal/polkit/dconf
+  # desktop config lives in modules/desktop.nix.
 
   ###########################################################################
   ## SSH — key-only, no root, no passwords.
@@ -125,8 +106,7 @@
     settings.PasswordAuthentication = false;
   };
 
-  hardware.bluetooth.enable = true;
-  hardware.bluetooth.powerOnBoot = true;
+  # hardware.bluetooth is enabled in modules/desktop.nix.
 
   ###########################################################################
   ## Keyboard — Caps Lock acts as Control when held, Escape when tapped.
@@ -142,30 +122,8 @@
     };
   };
 
-  ###########################################################################
-  ## Fonts
-  ###########################################################################
-  fonts.packages = with pkgs; [
-    nerd-fonts.jetbrains-mono
-    ibm-plex
-    noto-fonts
-    noto-fonts-color-emoji
-  ];
-
-  environment.systemPackages = with pkgs; [
-    xdg-utils
-    brightnessctl
-    wl-clipboard
-    cliphist
-    xwayland-satellite
-    vulkan-tools
-    pciutils
-    usbutils
-    btrfs-progs
-  ];
-
-  environment.sessionVariables.BROWSER = "firefox";
-  environment.sessionVariables.TERMINAL = "ghostty";
+  # Fonts, the Wayland/desktop system packages, and the BROWSER/TERMINAL
+  # defaults are shared via modules/desktop.nix.
 
   nix.gc = {
     automatic = true;
@@ -175,18 +133,14 @@
   };
   nix.optimise.automatic = true;
 
-  # Binary caches.
-  #   niri.cachix.org — prebuilt niri (same as fox).
-  #   apple-silicon.cachix.org added below (resolves the prior TODO); kernel
-  #   still compiles if the cache lacks this exact nixpkgs build.
-  #   Pull the substituter URL and public key from the upstream README:
-  #     https://github.com/nix-community/nixos-apple-silicon/blob/main/docs/binary-cache.md
+  # Binary caches. niri.cachix.org is added by modules/desktop.nix; here we add
+  # the apple-silicon cache (kernel still compiles if the cache lacks this exact
+  # nixpkgs build). Substituter URL + key from the upstream README:
+  #   https://github.com/nix-community/nixos-apple-silicon/blob/main/docs/binary-cache.md
   nix.settings.extra-substituters = [
-    "https://niri.cachix.org"
     "https://nixos-apple-silicon.cachix.org"
   ];
   nix.settings.extra-trusted-public-keys = [
-    "niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964="
     "nixos-apple-silicon.cachix.org-1:8psDu5SA5dAD7qA0zMy5UT292TxeEPzIz8VVEr2Js20="
   ];
 
