@@ -13,6 +13,7 @@
     ../../home/pi.nix
     ../../home/hyprpaper.nix
     ../../home/hypridle.nix
+    ../../home/studio-display.nix
     ../../home/hyprlock.nix
     ../../home/dunst.nix
     ../../home/musikcube.nix
@@ -24,6 +25,7 @@
 
   home.packages = [
     pkgs.telegram-desktop
+    pkgs.signal-desktop
     pkgs.nicotine-plus
     pkgs.protonmail-desktop   # official Proton Mail app (Electron); paid account
     launcher.packages.${pkgs.stdenv.hostPlatform.system}.default

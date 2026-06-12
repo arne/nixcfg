@@ -22,6 +22,7 @@
 
   home.packages = [
     pkgs.telegram-desktop
+    pkgs.signal-desktop
     launcher.packages.${pkgs.stdenv.hostPlatform.system}.default
     llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.pi
   ];
