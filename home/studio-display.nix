@@ -1,70 +1,91 @@
 { config, pkgs, lib, ... }:
 
 let
-  # fox drives a single Apple Studio Display over USB4. Two quirks need
-  # handling, both solved by resolving the connector at runtime by make/model
-  # rather than by DP number — the DP connector numbers drift across reboots
-  # (they have already gone DP-5/6 → DP-7/8 once, which stranded every
-  # workspace on the phantom output and left the desktop apparently empty):
+  # fox drives a single Apple Studio Display over USB4. The facts on the
+  # ground (verified against EDID dumps and the niri source, 2026-06):
   #
-  #   1. The panel does not re-train its DisplayPort link after a DPMS-off, so
-  #      niri's power-off/power-on-monitors leave it black on wake. A full
-  #      output disable/enable forces a modeset that re-trains the link.
-  #   2. The display also exposes a phantom secondary DP stream (no EDID, so
-  #      niri reports make "Unknown") that niri treats as a tiny output and
-  #      lets steal workspaces. We turn every Unknown-make output off.
+  #   * The USB4 link occasionally drops and re-enumerates, renumbering the
+  #     DP connectors (DP-5/6 → DP-7/8 has happened). Connector names are
+  #     therefore useless as config keys; the EDID identity is stable and
+  #     niri matches outputs by "<make> <model> <serial>" everywhere a
+  #     connector name is accepted (niri-config output.rs `matches()`).
   #
-  # `niri` is on PATH inside the niri systemd user session (hypridle already
-  # relies on this); jq is pulled in explicitly.
+  #   * The display structurally exposes a SECOND DP stream (DisplayID tiled
+  #     topology, the pre-DSC dual-SST legacy). DP tunnel 1 negotiates the
+  #     full 5120x2880@60 single-stream via DSC; tunnel 2 stays connected
+  #     with a malformed, zero-padded copy of the EDID that libdisplay-info
+  #     rejects — so niri sees make/model/serial as missing and reports
+  #     "Unknown". Such an output can NOT be matched in the declarative
+  #     config (niri deliberately refuses identifier matching when all EDID
+  #     fields are absent), so a runtime guard is the only place to disable
+  #     it. It reappears on every boot and after every link re-enumeration —
+  #     hence an event-driven guard, not a session-start oneshot.
+  #
+  #   * The panel does not re-train its DP link after plain DPMS-off, so the
+  #     idle blank uses a full output disable/enable (modeset) instead of
+  #     power-off-monitors. Worth retesting on kernel bumps; if a future
+  #     kernel re-trains correctly, drop offCmd/onCmd back to the
+  #     my.screenBlank defaults and the toggle below disappears.
+  #
+  # The serial is this specific panel's EDID serial. A replacement display
+  # changes it: `niri msg outputs` shows the new one.
+  displayId = "Apple Computer Inc StudioDisplay 0xDF8E29CD";
+
+  # Idle blank/unblank for the real display, addressed by stable identity.
   studio-display-toggle = pkgs.writeShellApplication {
     name = "studio-display-toggle";
+    text = ''
+      # Usage: studio-display-toggle off|on
+      niri msg output "${displayId}" "''${1:-on}"
+    '';
+  };
+
+  # Disable any output niri could not identify (no make/model/serial — on
+  # this machine that is exactly the Studio Display's vestigial second
+  # stream). Triggered by the niri event stream: WorkspacesChanged fires
+  # whenever output topology changes (session start, hotplug, link-drop
+  # re-enumeration), which is precisely when the phantom can (re)appear.
+  studio-display-guard = pkgs.writeShellApplication {
+    name = "studio-display-guard";
     runtimeInputs = [ pkgs.jq ];
     text = ''
-      # Usage: studio-display-toggle off|on   (run with "on" at session start)
-      action="''${1:-on}"
-
-      conn=$(niri msg --json outputs \
-        | jq -r '[to_entries[]
-                  | select(.value.make == "Apple Computer Inc"
-                           and .value.model == "StudioDisplay")
-                  | .key][0] // empty')
-
-      if [ -n "$conn" ]; then
-        niri msg output "$conn" "$action"
-      fi
-
-      if [ "$action" = "on" ]; then
-        # Disable phantom secondary streams (no EDID) so they cannot grab
-        # workspaces while the real output is toggled off and back on.
+      sweep() {
         niri msg --json outputs \
-          | jq -r 'to_entries[] | select(.value.make == "Unknown") | .key' \
+          | jq -r 'to_entries[]
+                   | select(.value.make == "Unknown"
+                            and .value.model == "Unknown")
+                   | .key' \
           | while read -r out; do
               niri msg output "$out" off || true
             done
-      fi
+      }
+      sweep
+      niri msg --json event-stream | while read -r ev; do
+        case "$ev" in
+          *WorkspacesChanged*) sweep ;;
+        esac
+      done
     '';
   };
 in
 {
   home.packages = [ studio-display-toggle ];
 
-  # The idle screen-off (home/hypridle.nix) uses the modeset toggle, not DPMS.
+  # The idle screen-off (home/hypridle.nix) uses the modeset toggle, not
+  # DPMS — see the link re-training note above.
   my.screenBlank.offCmd = "${studio-display-toggle}/bin/studio-display-toggle off";
   my.screenBlank.onCmd = "${studio-display-toggle}/bin/studio-display-toggle on";
 
-  # Assert the phantom off (and the real output on) once the niri session is
-  # up — same systemd-user-service-on-graphical-session.target mechanism that
-  # hypridle/hyprpaper use, so no niri spawn-at-startup is needed. Without this
-  # the phantom is live from boot until the first idle/wake cycle.
-  systemd.user.services.studio-display-outputs = {
+  systemd.user.services.studio-display-guard = {
     Unit = {
-      Description = "Disable Apple Studio Display phantom output(s)";
+      Description = "Disable Apple Studio Display phantom output (event-driven)";
       After = [ "graphical-session.target" ];
       PartOf = [ "graphical-session.target" ];
     };
     Service = {
-      Type = "oneshot";
-      ExecStart = "${studio-display-toggle}/bin/studio-display-toggle on";
+      ExecStart = "${studio-display-guard}/bin/studio-display-guard";
+      Restart = "on-failure";
+      RestartSec = 2;
     };
     Install.WantedBy = [ "graphical-session.target" ];
   };

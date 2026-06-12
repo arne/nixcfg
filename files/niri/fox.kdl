@@ -1,7 +1,17 @@
 // fox — Strix Halo desktop, Apple Studio Display over USB4.
 //
-// The Studio Display's phantom secondary DP stream and its DPMS-wake quirk are
-// handled at runtime by home/studio-display.nix — resolved by make/model,
-// because the DP connector numbers drift across reboots. A static
-// `output "DP-N" { off }` block used to live here but went stale the moment
-// the connectors renumbered (DP-5/6 → DP-7/8), re-arming the phantom.
+// The display is configured by EDID identity ("make model serial"), which
+// survives the USB4 link drops that renumber DP connectors (DP-5/6 → DP-7/8
+// has happened; a connector-keyed `output "DP-N"` block went stale that way
+// once already). The serial belongs to this specific panel — a replacement
+// shows its own in `niri msg outputs`.
+//
+// The display's vestigial second DP stream (malformed EDID, niri reports it
+// as Unknown/Unknown) cannot be matched declaratively — niri refuses
+// identifier matching for outputs with no EDID identity — so it is disabled
+// at runtime by the event-driven guard in home/studio-display.nix, which
+// also documents the DPMS-wake quirk.
+
+output "Apple Computer Inc StudioDisplay 0xDF8E29CD" {
+    mode "5120x2880@60.000"
+}
