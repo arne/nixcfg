@@ -71,9 +71,17 @@
       url = "git+https://code.bas.es/arne/firsthouse";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Pull-based GitOps for the servers (oink, fismen): each polls this repo's
+    # main branch and deploys its own nixosConfiguration. Settings live in
+    # modules/comin.nix.
+    comin = {
+      url = "github:nlewo/comin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, niri, apple-silicon, launcher, llm-agents, disko, sops-nix, nix-index-database, firsthouse, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, niri, apple-silicon, launcher, llm-agents, disko, sops-nix, nix-index-database, firsthouse, comin, ... }:
     {
       nixosConfigurations.fox = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
@@ -105,6 +113,8 @@
         modules = [
           disko.nixosModules.disko
           sops-nix.nixosModules.sops
+          comin.nixosModules.comin
+          ./modules/comin.nix
           ./hosts/fismen/disko.nix
           ./hosts/fismen/hardware-configuration.nix
           ./hosts/fismen/configuration.nix
@@ -153,6 +163,8 @@
           disko.nixosModules.disko
           sops-nix.nixosModules.sops
           firsthouse.nixosModules.firsthouse
+          comin.nixosModules.comin
+          ./modules/comin.nix
           ./hosts/oink/disko.nix
           ./hosts/oink/hardware-configuration.nix
           ./hosts/oink/configuration.nix
