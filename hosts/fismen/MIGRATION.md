@@ -132,34 +132,33 @@ dev.bas.es 404 (app-level).
 
 ## Phase 2 runbook — copy instances to oink
 
-One-time setup:
+One-time setup (DONE 2026-06-12): API bound to the PUBLIC IP for transfer
+speed (tailscale's userspace WireGuard bottlenecks):
 ```bash
 # on fismen:
-incus config set core.https_address 100.86.115.86:8443
+incus config set core.https_address 135.181.130.98:8443
+# + nft table inet incus-migration: 8443 allowed ONLY from 185.181.63.4.
 incus config trust add oink            # prints a token
 # on oink:
-incus remote add fismen 100.86.115.86 --token <token>
+incus remote add fismen https://135.181.130.98:8443 --accept-certificate
 ```
+DECOMMISSION (after move-back): `incus config unset core.https_address` +
+`nft delete table inet incus-migration` on whichever host still has them
+(fismen's copies die with the reinstall; the NixOS fismen gets its own pair
+for Phase 5 — remember the same cleanup there), `incus remote remove` both.
 
 Pre-sync (instances keep running; repeat near cutover — --refresh is
-incremental):
+incremental). NOTE: `-d eth0,ipv4.address=...` does NOT work on copy (the
+NIC is profile-inherited; -d creates a typeless new device and the copy
+fails). Copy first, then `incus config device override`:
 ```bash
-# on oink — IPs from the inventory table above; example:
-incus copy fismen:vaultwarden vaultwarden --refresh --stateless \
-  -p fismen -d eth0,ipv4.address=10.228.107.31
+# on oink — /tmp/presync.sh does all 32 from the inventory table:
+incus copy fismen:$n $n --refresh -p fismen
+incus config device override $n eth0 ipv4.address=10.228.107.X \
+  || incus config device set $n eth0 ipv4.address=10.228.107.X
 ```
-All 32, generated from the table:
-```bash
-for spec in a:204 abase:104 auth:231 b:137 bases-dev:167 beszel:118 \
-  blog:175 bookmarks:77 burball:59 cal:79 chat-posta:208 clips:49 \
-  coffee:111 comet:218 filebrowser:67 gatus:102 glance:196 keys:29 \
-  marki:122 martin:200 msg-web:173 orbit:78 outline:254 posta:168 \
-  posta-web:240 themes:116 tinyauth:250 tjue:2 tjue-preview:74 tp:103 \
-  tv:136 vaultwarden:31; do
-  n=${spec%:*}; ip=10.228.107.${spec#*:}
-  incus copy fismen:$n $n --refresh -p fismen -d eth0,ipv4.address=$ip
-done
-```
+After any later `--refresh`, re-check the pin before starting the instance
+(refresh may resync config from source, where nothing is pinned).
 Notes: instances with host-mounted disk devices (blog, burball, filebrowser,
 marki, themes) need their host paths rsynced to oink at the SAME paths first,
 or the copy's device source dangles. burball also has a host proxy device
