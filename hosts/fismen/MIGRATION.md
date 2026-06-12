@@ -79,8 +79,20 @@ Host paths mounted into instances (all tiny; rsync with the instance):
 /var/www/arne (484K), /var/lib/burball (392K), /srv/media (4K),
 /srv/docs (632K), /var/www/themebases (816K).
 
-Custom storage volume: `poxy-data` on pool default — check owner/use before
-migrating (`incus storage volume show default poxy-data`).
+Custom storage volume: `poxy-data` on pool default — ORPHANED (used_by: []);
+RETIRED per arne 2026-06-12 (deleted on oink; the fismen original dies with
+the reinstall — do not recreate).
+
+Config deltas applied to the OINK COPIES during cutover (carry these to the
+new fismen on move-back — both hosts use the NixOS subuid layout
+root:1000000:1000000000, so the originals' settings can't come back):
+* burball: `raw.idmap: uid 100000 0` REMOVED (fismen-Debian-specific subuid
+  base; newuidmap refuses it) → replaced with `shift=true` on the `data`
+  disk device + host dir /var/lib/burball chowned to 0:0.
+* burball: vestigial `http` proxy device (host 127.0.0.1:8080 → :8080)
+  REMOVED — nothing used it, and it collided with kokosbananas' 0.0.0.0:8080
+  proxy on oink. Don't restore unless something on the host needs loopback
+  access to burball.
 
 /var/www: arne 484K, bases 300K, chess 28K, lageriet 788K, nytta 1.8M,
 themebases 816K, tjue 48K (unused by live Caddyfile?), totalfrihet 165M.
