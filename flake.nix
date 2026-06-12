@@ -95,6 +95,30 @@
         ];
       };
 
+      # fismen — headless server (Hetzner dedicated). The main estate: Caddy
+      # (~40 vhosts) + ~32 Incus instances + nyheter/bbs host services. ZFS
+      # rpool mirrored across the two NVMes (disko); BIOS GRUB (see
+      # hosts/fismen/disko.nix). Migration log: hosts/fismen/MIGRATION.md.
+      nixosConfigurations.fismen = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = { inherit inputs; };
+        modules = [
+          disko.nixosModules.disko
+          sops-nix.nixosModules.sops
+          ./hosts/fismen/disko.nix
+          ./hosts/fismen/hardware-configuration.nix
+          ./hosts/fismen/configuration.nix
+          home-manager.nixosModules.home-manager
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.backupFileExtension = "hm-bak";
+            home-manager.sharedModules = [ nix-index-database.homeModules.nix-index ];
+            home-manager.users.arne = import ./hosts/fismen/home.nix;
+          }
+        ];
+      };
+
       # air — MacBook Air, Apple Silicon (aarch64), Asahi kernel via the
       # nix-community/nixos-apple-silicon flake. Same niri/home-manager stack
       # as fox; per-host niri output config is files/niri/air.kdl.

@@ -4,62 +4,74 @@
   imports = [
     ../../modules/base.nix
     ./incus.nix
+    ./caddy.nix
+    ./services.nix
     ./secrets.nix
-    # FISMEN-INTERIM: temporary home for the fismen estate during its NixOS
-    # reinstall — remove this import (plus the marked blocks in ./incus.nix)
-    # after the move-back. See hosts/fismen/MIGRATION.md.
-    ./fismen-interim.nix
   ];
 
   ###########################################################################
-  ## Boot — systemd-boot on rpool-a's ESP (/boot). After each install, the
-  ## entire ESP is mirrored to rpool-b's ESP (/boot-fallback) so it stays
-  ## bit-identical. UEFI's built-in /EFI/BOOT/BOOTX64.EFI fallback on each
-  ## disk's ESP handles the failover if rpool-a dies — no separate Boot####
-  ## entry is required (systemd-boot copies BOOTX64.EFI alongside its own
-  ## loader).
+  ## Boot — GRUB in BIOS/legacy mode (the box boots legacy today and flipping
+  ## a remote Hetzner machine to UEFI risks a KVM-console rescue — see
+  ## disko.nix). mirroredBoots installs GRUB to BOTH disks' EF02 partitions
+  ## and writes both /boot trees, so either disk failing leaves a bootable
+  ## system. The vfat partitions stay EF00-typed for a later UEFI switch.
   ###########################################################################
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.systemd-boot.configurationLimit = 10;
-  boot.loader.efi.canTouchEfiVariables = true;
-  boot.loader.systemd-boot.extraInstallCommands = ''
-    ${pkgs.rsync}/bin/rsync -a --delete /boot/ /boot-fallback/
-  '';
+  boot.loader.grub = {
+    enable = true;
+    efiSupport = false;
+    configurationLimit = 10;
+    # disko auto-fills boot.loader.grub.devices from the EF02 partitions,
+    # which the grub module would merge into mirroredBoots as a duplicate
+    # entry — mirroredBoots below is the complete intent, so squash it.
+    devices = lib.mkForce [ ];
+    mirroredBoots = [
+      {
+        devices = [ "/dev/disk/by-id/nvme-KXD51RUE960G_TOSHIBA_406S10D6T7PM" ];
+        path = "/boot";
+      }
+      {
+        devices = [ "/dev/disk/by-id/nvme-KXD51RUE960G_TOSHIBA_406S10AYT7PM" ];
+        path = "/boot-fallback";
+      }
+    ];
+  };
 
   ###########################################################################
   ## Networking — static, headless. Matched on MAC (not iface name) via
-  ## systemd-networkd so a NIC rename can never strand the box. Reproduces the
-  ## gigahost.no assignment (v4 + v6) exactly.
+  ## systemd-networkd so a NIC rename can never strand the box. Reproduces
+  ## the live Hetzner assignment exactly (captured 2026-06-12, MIGRATION.md).
+  ## Hetzner routes IPv6 via the link-local gateway fe80::1.
   ###########################################################################
-  networking.hostName = "oink";
+  networking.hostName = "fismen";
   networking.useDHCP = false;
   networking.useNetworkd = true;
   systemd.network.enable = true;
   systemd.network.networks."10-wan" = {
-    matchConfig.MACAddress = "8c:dc:d4:ae:14:25";
+    matchConfig.MACAddress = "d4:5d:64:41:5b:d6";
     address = [
-      "185.181.63.4/24"
-      "2a03:94e0:ffff:185:181:63::4/118"
+      "135.181.130.98/26"
+      "2a01:4f9:4b:2141::2/64"
     ];
     routes = [
-      { Gateway = "185.181.63.1"; }
-      { Gateway = "2a03:94e0:ffff:185:181:63::1"; }
+      { Gateway = "135.181.130.65"; }
+      { Gateway = "fe80::1"; }
     ];
     networkConfig.DNS = [ "1.1.1.1" "1.0.0.1" ];
     linkConfig.RequiredForOnline = "routable";
   };
 
+  # 22 only here — caddy.nix opens 80/443(+udp), modules/services/bbs.nix
+  # opens 2222.
   networking.firewall.enable = true;
   networking.firewall.allowedTCPPorts = [ 22 ];
 
   ###########################################################################
-  ## Tailscale — base.nix enables the service ("client"); oink is also an exit
-  ## node, so bump routing features to "both" (turns on the IPv4/IPv6 forwarding
-  ## sysctls needed to route other nodes' traffic out the gigahost.no uplink).
-  ## Advertising is set at auth time, not declaratively (we use manual auth, so
-  ## extraUpFlags would be ignored). On first bring-up, SSH in and run:
+  ## Tailscale — base.nix enables the service; fismen offers an exit node
+  ## (like the old install), so bump routing features to "both". Advertising
+  ## happens at auth time (manual auth): on first bring-up run
   ##   sudo tailscale up --advertise-exit-node
-  ## then approve the exit node in the Tailscale admin console.
+  ## then approve in the admin console, note the NEW tailnet IP, and update
+  ## the two `bind` lines in ./Caddyfile (vault.fismen.no, ai.azf.no).
   ###########################################################################
   services.tailscale.useRoutingFeatures = "both";
 
@@ -80,16 +92,16 @@
     isNormalUser = true;
     uid = 1000;
     description = "Arne Skaar Fismen";
-    extraGroups = [ "wheel" "incus-admin" ];  # incus-admin: drive Incus without sudo
+    extraGroups = [ "wheel" "incus-admin" ];
     shell = pkgs.fish;
-    # SSH keys come from the shared list in modules/ssh-keys.nix (config.mine.sshKeys).
   };
   security.sudo.wheelNeedsPassword = false;
 
   programs.fish.enable = true;
 
   ###########################################################################
-  ## Swap — zram OOM cushion only; no disk swap (ZFS-on-zvol swap can deadlock).
+  ## Swap — zram OOM cushion only; no disk swap (ZFS-on-zvol swap can
+  ## deadlock). The old install's 32G md-swap partition is gone with disko.
   ###########################################################################
   zramSwap = {
     enable = true;
@@ -98,7 +110,7 @@
   };
 
   ###########################################################################
-  ## ZFS maintenance — monthly scrub, periodic TRIM (helps the SSD rpool).
+  ## ZFS maintenance — monthly scrub, periodic TRIM (NVMe rpool).
   ###########################################################################
   services.zfs.autoScrub.enable = true;
   services.zfs.trim.enable = true;
@@ -110,14 +122,8 @@
   i18n.defaultLocale = "en_US.UTF-8";
   console.keyMap = "us";
 
-  ###########################################################################
-  ## Nix / packages — nix experimental-features / trusted-users, the numtide
-  ## cache, and the shared CLI tooling (git/htop/claude-code/…) all live in
-  ## modules/base.nix; oink adds nothing host-specific here.
-  ###########################################################################
-
-  # It's a pig, not a fox.
-  motd.animal = "piggy";
+  # The estate-bearing dragon.
+  motd.animal = "dragon";
 
   # First release installed against. Do NOT bump casually.
   system.stateVersion = "25.11";

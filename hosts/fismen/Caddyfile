@@ -1,0 +1,233 @@
+# fismen Caddy sites — synced from the live /etc/caddy/Caddyfile on 2026-06-12
+# (Phase 1 of the migration; the earlier May copy had drifted). The global
+# `{ admin 10.228.107.1:2019 }` block is lifted out: NixOS generates the
+# global block from services.caddy.globalConfig — see caddy.nix.
+#
+# NOTES:
+#   * `bind 100.102.255.10` lines hardcode fismen's CURRENT tailnet IP. On oink
+#     (interim) they are rewritten via replaceStrings in
+#     hosts/oink/fismen-interim.nix; after the reinstall, update them to the
+#     NEW tailnet IP `tailscale up` hands out.
+#   * The (cf) snippet needs the Caddy cloudflare-DNS plugin (caddy.nix builds
+#     it) + CLOUDFLARE_API_TOKEN in the environment (sops → EnvironmentFile).
+#   * `root * /var/www/<site>` static sites need those trees rsynced over.
+#   * `reverse_proxy 10.228.107.x` targets require instances keeping their
+#     IPs — pin each instance's ipv4.address on copy (see MIGRATION.md table).
+
+# Cloudflare DNS-01 challenge (used by domains whose DNS lives in Cloudflare)
+(cf) {
+	tls {
+		dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+	}
+}
+
+(tinyauth) {
+	forward_auth 10.228.107.250:3000 {
+		uri /api/auth/caddy
+	}
+}
+
+dev.bas.es {
+	reverse_proxy 10.228.107.167:8080
+}
+
+fismen.no {
+	import tinyauth
+	reverse_proxy 10.228.107.196:8080
+}
+
+ai.fismen.no {
+	reverse_proxy fox.little-lenok.ts.net:8080
+}
+
+auth.fismen.no {
+	reverse_proxy 10.228.107.231:1411
+}
+
+bookmarks.fismen.no {
+	reverse_proxy 10.228.107.77:3000
+}
+
+burball.fismen.no {
+	reverse_proxy 10.228.107.59:8080
+}
+
+clips.fismen.no {
+	reverse_proxy 10.228.107.49:3000
+}
+
+docs.fismen.no {
+	reverse_proxy 10.228.107.122:3000
+}
+
+ds.fismen.no {
+	reverse_proxy servo.little-lenok.ts.net:5000
+}
+
+basefile.fismen.no {
+	reverse_proxy servo.little-lenok.ts.net:8096
+}
+
+files.fismen.no {
+	reverse_proxy 10.228.107.67:8080
+}
+
+keys.fismen.no {
+	reverse_proxy 10.228.107.29:8080
+}
+
+monitor.fismen.no {
+	reverse_proxy 10.228.107.118:8090
+}
+
+outline.fismen.no {
+	reverse_proxy 10.228.107.254:3000
+}
+
+photos.fismen.no {
+	reverse_proxy cube.little-lenok.ts.net:2283
+}
+
+status.fismen.no {
+	import tinyauth
+	reverse_proxy 10.228.107.102:8080 # gatus container IP
+}
+
+tiny.fismen.no {
+	reverse_proxy 10.228.107.250:3000
+}
+
+tv.fismen.no {
+	reverse_proxy 10.228.107.136:9191
+}
+
+ugle.fismen.no {
+	reverse_proxy royset:8971 {
+		transport http {
+			tls_insecure_skip_verify
+		}
+	}
+}
+
+vault.fismen.no {
+	bind 100.102.255.10
+	reverse_proxy 10.228.107.31:8080
+	import cf
+}
+
+video.fismen.no {
+	reverse_proxy 10.228.107.38:32400 {
+		transport http {
+			versions 1.1 2
+		}
+	}
+}
+
+bas.es basehp.fismen.no {
+	root * /var/www/bases
+	file_server
+	encode zstd gzip
+	import cf
+}
+
+lageriet.org {
+	root * /var/www/lageriet
+	file_server
+}
+
+www.lageriet.org {
+	redir https://lageriet.org{uri} permanent
+}
+
+nyheter.fismen.no {
+	reverse_proxy 127.0.0.1:8083
+}
+
+arne.fismen.no {
+	reverse_proxy 10.228.107.175:8080
+}
+
+orbit.fismen.no {
+	reverse_proxy orbit.little-lenok.ts.net:8080
+}
+
+trappeprodusenten.no {
+	reverse_proxy 10.228.107.103:8080
+}
+
+coffee.fismen.no {
+	reverse_proxy 10.228.107.111:8080
+}
+
+a.bas.es *.a.bas.es {
+	reverse_proxy 10.228.107.104:80
+	import cf
+}
+
+tjue.net {
+	reverse_proxy 10.228.107.2:8080
+	encode zstd gzip
+	import cf
+}
+
+chess.fismen.no {
+	root * /var/www/chess
+	file_server
+}
+
+preview.tjue.net {
+	reverse_proxy 10.228.107.74:8080
+	encode zstd gzip
+	import cf
+}
+
+theme.bas.es {
+	root * /var/www/themebases
+	file_server
+	encode zstd gzip
+	import cf
+}
+
+cal.fismen.no {
+	reverse_proxy 10.228.107.79:8080
+}
+
+a.fismen.no {
+	reverse_proxy 10.228.107.204:8088
+}
+b.fismen.no {
+	reverse_proxy 10.228.107.137:8088
+}
+
+arne.posta.no, marcus.posta.no, tarald.posta.no, oystein.posta.no {
+	reverse_proxy 10.228.107.168:80
+	import cf
+}
+
+posta.no {
+	reverse_proxy 10.228.107.240:9495
+	encode zstd gzip
+	import cf
+}
+
+totalfrihet.no {
+	root * /var/www/totalfrihet
+	file_server
+}
+
+www.totalfrihet.no {
+	redir https://totalfrihet.no{uri} permanent
+}
+
+chat.posta.no {
+	reverse_proxy 10.228.107.208:80
+	import cf
+}
+
+ai.azf.no {
+	bind 100.102.255.10
+	import cf
+	@notTailnet not remote_ip 100.64.0.0/10 fd7a:115c:a1e0::/48
+	abort @notTailnet
+	reverse_proxy fox.little-lenok.ts.net:8080
+}
