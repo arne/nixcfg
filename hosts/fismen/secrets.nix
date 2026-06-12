@@ -23,11 +23,10 @@
   ## these keys — arming the wiring requires no other changes.
   ###########################################################################
 
-  # TODO: uncomment once secrets/fismen.yaml exists (see above).
-  # sops.defaultSopsFile = ../../secrets/fismen.yaml;
-  # sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
-  #
-  # sops.secrets."caddy/cloudflare-env" = { mode = "0400"; };
-  # sops.secrets."nyheter/oidc-env"     = { mode = "0400"; };
-  # sops.secrets."beszel/agent-env"     = { mode = "0400"; };
+  sops.defaultSopsFile = ../../secrets/fismen.yaml;
+  sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+
+  sops.secrets."caddy/cloudflare-env" = { mode = "0400"; };
+  sops.secrets."nyheter/oidc-env"     = { mode = "0400"; };
+  sops.secrets."beszel/agent-env"     = { mode = "0400"; };
 }
