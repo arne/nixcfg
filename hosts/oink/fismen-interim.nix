@@ -35,7 +35,7 @@
     '';
 
     extraConfig = builtins.replaceStrings
-      [ "bind 100.86.115.86" ] # fismen's tailnet IP
+      [ "bind 100.102.255.10" ] # fismen's tailnet IP
       [ "bind 100.78.72.66" ]  # oink's tailnet IP
       (builtins.readFile ../fismen/Caddyfile);
 

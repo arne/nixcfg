@@ -4,7 +4,7 @@
 # global block from services.caddy.globalConfig — see caddy.nix.
 #
 # NOTES:
-#   * `bind 100.86.115.86` lines hardcode fismen's CURRENT tailnet IP. On oink
+#   * `bind 100.102.255.10` lines hardcode fismen's CURRENT tailnet IP. On oink
 #     (interim) they are rewritten via replaceStrings in
 #     hosts/oink/fismen-interim.nix; after the reinstall, update them to the
 #     NEW tailnet IP `tailscale up` hands out.
@@ -110,7 +110,7 @@ ugle.fismen.no {
 }
 
 vault.fismen.no {
-	bind 100.86.115.86
+	bind 100.102.255.10
 	reverse_proxy 10.228.107.31:8080
 	import cf
 }
@@ -225,7 +225,7 @@ chat.posta.no {
 }
 
 ai.azf.no {
-	bind 100.86.115.86
+	bind 100.102.255.10
 	import cf
 	@notTailnet not remote_ip 100.64.0.0/10 fd7a:115c:a1e0::/48
 	abort @notTailnet
