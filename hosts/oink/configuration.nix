@@ -5,6 +5,10 @@
     ../../modules/base.nix
     ./incus.nix
     ./secrets.nix
+    # FISMEN-INTERIM: temporary home for the fismen estate during its NixOS
+    # reinstall — remove this import (plus the marked blocks in ./incus.nix)
+    # after the move-back. See hosts/fismen/MIGRATION.md.
+    ./fismen-interim.nix
   ];
 
   ###########################################################################

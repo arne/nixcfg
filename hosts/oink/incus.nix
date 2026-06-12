@@ -62,6 +62,14 @@
   virtualisation.incus = {
     enable = true;
 
+    # Feature release (7.x), NOT the default incus-lts (6.0.x). Required to
+    # RECEIVE migration copies from live fismen (zabbly incus 6.23): the
+    # migration target must be >= the source version. NOTE: switching from
+    # lts upgraded the daemon DB one-way — do not revert to incus-lts after
+    # the fismen interim, this stays. The future fismen NixOS host runs the
+    # same pkgs.incus so the move-back (7.x -> 7.x) is fine.
+    package = pkgs.incus;
+
     # Declarative first-init. The preseed service re-runs `incus admin init
     # --preseed` whenever incus.service (re)starts; it updates existing
     # entities rather than recreating them. Keep this in sync with reality —
@@ -90,6 +98,23 @@
             "ipv6.address" = "none";
           };
         }
+        ## FISMEN-INTERIM — second bridge reproducing live fismen's incusbr0
+        ## exactly (same subnet + ULA) so the ~32 migrated instances keep
+        ## their 10.228.107.x addresses and the Caddyfile targets stay valid.
+        ## The sandbox-egress chains above match only `iifname "incusbr0"`,
+        ## so this bridge is NOT hardened — and sandboxes can't reach it
+        ## (10.228.107.0/24 falls inside their 10.0.0.0/8 drop). Remove this
+        ## block (and the fismen profile below) after the move-back.
+        {
+          name = "incusbr1";
+          type = "bridge";
+          config = {
+            "ipv4.address" = "10.228.107.1/24";
+            "ipv4.nat" = "true";
+            "ipv6.address" = "fd42:4920:83b2:cb09::1/64";
+            "ipv6.nat" = "true";
+          };
+        }
       ];
 
       # Baseline profile: root disk on the SSD pool + a NIC on the bridge. The
@@ -107,6 +132,26 @@
               type = "nic";
               name = "eth0";
               network = "incusbr0";
+            };
+          };
+        }
+        ## FISMEN-INTERIM — profile for the migrated fismen instances:
+        ## same SSD pool, but NIC on incusbr1 (10.228.107.0/24). Every
+        ## `incus copy fismen:<x>` MUST use `-p fismen` (plus a per-instance
+        ## pinned eth0 ipv4.address — see hosts/fismen/MIGRATION.md table).
+        ## Remove after the move-back.
+        {
+          name = "fismen";
+          devices = {
+            root = {
+              type = "disk";
+              path = "/";
+              pool = "default";
+            };
+            eth0 = {
+              type = "nic";
+              name = "eth0";
+              network = "incusbr1";
             };
           };
         }
