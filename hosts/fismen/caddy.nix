@@ -50,10 +50,11 @@
 
     # CLOUDFLARE_API_TOKEN for DNS-01; file contains one line:
     #   CLOUDFLARE_API_TOKEN=...
-    # `-` prefix: tolerate absence so a fresh install can boot before sops
-    # bring-up (caddy stays gated on .storage-seeded anyway).
-    # TODO Phase 3: switch to config.sops.secrets."caddy/cloudflare-env".path.
-    serviceConfig.EnvironmentFile = "-/run/secrets/caddy-cloudflare-env";
+    # Tolerant literal path matching the sops key layout (`-` prefix: a fresh
+    # install can boot before sops bring-up; caddy stays gated on
+    # .storage-seeded anyway). sops-nix places "caddy/cloudflare-env" exactly
+    # here once hosts/fismen/secrets.nix is armed.
+    serviceConfig.EnvironmentFile = "-/run/secrets/caddy/cloudflare-env";
   };
 
   # Static-site vhosts serve from /var/www/<site> — migrate those trees over

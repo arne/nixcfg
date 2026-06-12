@@ -122,6 +122,95 @@ Current install is BIOS/legacy; firmware supports UEFI but switching boot
 mode remotely is risky (may need Hetzner KVM console if it doesn't come up).
 → decision recorded in plan discussion.
 
+## Vhost baseline (2026-06-12, ./check-vhosts.sh)
+
+40/44 healthy. Pre-existing breakage — do NOT chase these during migration
+verification: ai.azf.no + ai.fismen.no 502 (fox upstream :8080 down),
+keys.fismen.no 502 (app down inside the instance), video.fismen.no 502
+(targets 10.228.107.38 — no such instance exists; dead vhost),
+dev.bas.es 404 (app-level).
+
+## Phase 2 runbook — copy instances to oink
+
+One-time setup:
+```bash
+# on fismen:
+incus config set core.https_address 100.86.115.86:8443
+incus config trust add oink            # prints a token
+# on oink:
+incus remote add fismen 100.86.115.86 --token <token>
+```
+
+Pre-sync (instances keep running; repeat near cutover — --refresh is
+incremental):
+```bash
+# on oink — IPs from the inventory table above; example:
+incus copy fismen:vaultwarden vaultwarden --refresh --stateless \
+  -p fismen -d eth0,ipv4.address=10.228.107.31
+```
+All 32, generated from the table:
+```bash
+for spec in a:204 abase:104 auth:231 b:137 bases-dev:167 beszel:118 \
+  blog:175 bookmarks:77 burball:59 cal:79 chat-posta:208 clips:49 \
+  coffee:111 comet:218 filebrowser:67 gatus:102 glance:196 keys:29 \
+  marki:122 martin:200 msg-web:173 orbit:78 outline:254 posta:168 \
+  posta-web:240 themes:116 tinyauth:250 tjue:2 tjue-preview:74 tp:103 \
+  tv:136 vaultwarden:31; do
+  n=${spec%:*}; ip=10.228.107.${spec#*:}
+  incus copy fismen:$n $n --refresh -p fismen -d eth0,ipv4.address=$ip
+done
+```
+Notes: instances with host-mounted disk devices (blog, burball, filebrowser,
+marki, themes) need their host paths rsynced to oink at the SAME paths first,
+or the copy's device source dangles. burball also has a host proxy device
+(127.0.0.1:8080) — works as-is. The two VMs (abase, martin) copy as VMs;
+oink must have KVM (it does).
+
+Cutover, per wave: stop on fismen → final `incus copy --refresh` → start on
+oink → flip the wave's DNS records → `./check-vhosts.sh`.
+- Wave 0 (canary): nytta.fismen.no (static, /var/www only — no instance).
+- Wave 1: tinyauth (forward_auth backend for fismen.no/status.fismen.no),
+  then low-risk singles (cal, clips, coffee, bookmarks, …).
+- Wave 2: the posta group together (posta, posta-web, chat-posta).
+- Wave 3: remainder incl. VMs; nyheter (stop on fismen, rsync /opt/nyheter →
+  oink:/opt/nyheter, chown -R nyheter:nyheter, start) and bbs (rsync
+  /var/lib/bbs → oink:/var/lib/bbs, binary /usr/local/bin/bbs →
+  oink:/opt/bbs/bbs, chown -R bbs:bbs /var/lib/bbs).
+- vault.fismen.no + ai.azf.no flip to OINK'S TAILNET IP (100.78.72.66).
+
+Caddy storage seed (before ANY flip — do this right after oink deploys):
+```bash
+# on oink:
+sudo rsync -a arne@100.86.115.86:/var/lib/caddy/.local/ /var/lib/caddy/.local/
+sudo chown -R caddy:caddy /var/lib/caddy
+sudo touch /var/lib/caddy/.storage-seeded
+sudo systemctl restart caddy
+# smoke test (DNS still on fismen):
+./check-vhosts.sh 185.181.63.4
+```
+Also rsync /var/www/* → oink:/var/www/ (same paths; caddy must read them).
+
+## Phase 4 runbook — reinstall fismen
+
+Drive from OINK (this box will be in rescue). Repo + pre-generated host key
+already staged there (/tmp/nixcfg-mig is scratch — clone properly first).
+```bash
+# 1. Belt-and-braces: incus export the stateful instances to /tank;
+#    tarball old fismen /etc, /var/lib/caddy, /var/www, /opt to /tank.
+# 2. Hetzner Robot → activate rescue → reboot fismen.
+# 3. From oink:
+nixos-anywhere --flake .#fismen \
+  --phases kexec root@135.181.130.98
+ssh root@135.181.130.98 zgenhostid -f f15e0a01   # BEFORE disko (ZFS hostId)
+nixos-anywhere --flake .#fismen \
+  --phases disko,install,reboot \
+  --extra-files ~/fismen-install \
+  root@135.181.130.98
+# 4. First boot: tailscale up --advertise-exit-node; note NEW tailnet IP;
+#    update the two `bind` lines in Caddyfile + the vault/ai.azf DNS records.
+# 5. rsync /var/www + caddy storage oink→fismen, touch .storage-seeded.
+```
+
 ## Operational notes
 
 - The Claude session driving this ran ON fismen — Phase 4 (rescue/reinstall)

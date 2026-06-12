@@ -104,6 +104,30 @@
         ];
       };
 
+      # fismen — headless server (Hetzner dedicated). The main estate: Caddy
+      # (~40 vhosts) + ~32 Incus instances + nyheter/bbs host services. ZFS
+      # rpool mirrored across the two NVMes (disko); BIOS GRUB (see
+      # hosts/fismen/disko.nix). Migration log: hosts/fismen/MIGRATION.md.
+      nixosConfigurations.fismen = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = { inherit inputs; };
+        modules = [
+          disko.nixosModules.disko
+          sops-nix.nixosModules.sops
+          ./hosts/fismen/disko.nix
+          ./hosts/fismen/hardware-configuration.nix
+          ./hosts/fismen/configuration.nix
+          home-manager.nixosModules.home-manager
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.backupFileExtension = "hm-bak";
+            home-manager.sharedModules = [ nix-index-database.homeModules.nix-index ];
+            home-manager.users.arne = import ./hosts/fismen/home.nix;
+          }
+        ];
+      };
+
       # oink — headless server (gigahost.no). No desktop/niri machinery; disko
       # owns partitioning (ZFS rpool mirrored across two SSDs, tank data pool
       # on the 8 TB HDD).
