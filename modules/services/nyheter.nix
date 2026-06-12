@@ -31,6 +31,10 @@
     wants = [ "network-online.target" ];
     after = [ "network-online.target" ];
 
+    # Vendor binary arrives via the migration rsync — until then the unit is
+    # a no-op instead of a 203/EXEC restart loop.
+    unitConfig.ConditionPathExists = "/opt/nyheter/nyheter-server";
+
     environment = {
       DATABASE_PATH = "/opt/nyheter/nyheter.db";
       LISTEN_ADDR = "127.0.0.1:8083";

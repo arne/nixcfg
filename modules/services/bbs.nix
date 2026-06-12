@@ -29,6 +29,10 @@
     wantedBy = [ "multi-user.target" ];
     after = [ "network.target" ];
 
+    # Vendor binary arrives via the migration rsync — until then the unit is
+    # a no-op instead of a 203/EXEC restart loop.
+    unitConfig.ConditionPathExists = "/opt/bbs/bbs";
+
     environment = {
       BBS_ADDR = ":2222";
       BBS_DB = "/var/lib/bbs/bbs.db";
