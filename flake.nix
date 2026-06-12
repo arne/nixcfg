@@ -19,6 +19,18 @@
     # sandbox so compiling locally fails.
     niri.url = "github:sodiboo/niri-flake";
 
+    # Apple Silicon support (Asahi kernel, Mesa, firmware, asahi-audio).
+    # Canonical home moved from tpwrules to nix-community. The flake ships its
+    # own binary cache — don't `follows = nixpkgs` or every cache hit dies and
+    # we recompile the Asahi kernel locally. Substituter URL + key are in
+    # docs/binary-cache.md.
+    #
+    # PINNED to a specific rev (not `main`) so the kernel/Mesa can't move under
+    # a plain `nix flake update`. The kernel version is governed solely by this
+    # input. To take a newer kernel: bump the rev below, then rebuild (expect a
+    # cache fetch, or a local compile if the cache lacks that build).
+    apple-silicon.url = "github:nix-community/nixos-apple-silicon/7f4b33118d9d2db87b5ce1ad5152bb727a63e340";
+
     launcher = {
       url = "git+https://code.bas.es/arne/launcher";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -50,48 +62,27 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Image builders — used to generate the Incus/LXC client sandbox image
-    # (packages.<system>.sandbox-{rootfs,metadata}) from images/sandbox.nix.
-    nixos-generators = {
-      url = "github:nix-community/nixos-generators";
+    # The firsthouse sandbox-portal system (Phase 6) — the Go portal app, the
+    # Incus/LXC sandbox guest image, and the NixOS service module all live in
+    # its own repo now. Public repo on code.bas.es, fetched over plain HTTPS (no
+    # credentials needed, like launcher). Its nixpkgs follows ours; its own
+    # llm-agents + nixos-generators stay pinned upstream (cache hits / image builder).
+    firsthouse = {
+      url = "git+https://code.bas.es/arne/firsthouse";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, niri, launcher, llm-agents, disko, sops-nix, nix-index-database, nixos-generators, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, niri, apple-silicon, launcher, llm-agents, disko, sops-nix, nix-index-database, firsthouse, ... }:
     {
-      # Client sandbox image (Incus/LXC). Build the pair and import into Incus:
-      #   incus image import \
-      #     $(nix build .#sandbox-metadata --print-out-paths)/tarball/*.tar.xz \
-      #     $(nix build .#sandbox-rootfs   --print-out-paths)/tarball/*.tar.xz \
-      #     --alias sandbox
-      # (see hosts/oink/incus/ provisioning in Phase 4). The guest config lives
-      # in images/sandbox.nix; `inputs` are threaded through for claude-code.
-      packages.x86_64-linux =
-        let
-          sandboxArgs = {
-            system = "x86_64-linux";
-            specialArgs = { inherit inputs; };
-            modules = [ ./images/sandbox.nix ];
-          };
-        in
-        {
-          sandbox-rootfs = nixos-generators.nixosGenerate (sandboxArgs // { format = "lxc"; });
-          sandbox-metadata = nixos-generators.nixosGenerate (sandboxArgs // { format = "lxc-metadata"; });
-        };
-
       nixosConfigurations.fox = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         specialArgs = { inherit inputs; };
         modules = [
           ./hosts/fox/hardware-configuration.nix
           ./hosts/fox/configuration.nix
-          niri.nixosModules.niri
-          # Backup config.kdl uses 2026-era features (background-effect,
-          # maximize-window-to-edges) so pin niri to unstable, not 25.08-stable.
-          ({ pkgs, ... }: {
-            programs.niri.package = niri.packages.${pkgs.system}.niri-unstable;
-          })
+          # niri module + unstable-pin + the rest of the Wayland desktop surface
+          # are shared via modules/desktop.nix, imported from fox's configuration.nix.
           home-manager.nixosModules.home-manager
           {
             home-manager.useGlobalPkgs = true;
@@ -128,6 +119,30 @@
         ];
       };
 
+      # air — MacBook Air, Apple Silicon (aarch64), Asahi kernel via the
+      # nix-community/nixos-apple-silicon flake. Same niri/home-manager stack
+      # as fox; per-host niri output config is files/niri/air.kdl.
+      nixosConfigurations.air = nixpkgs.lib.nixosSystem {
+        system = "aarch64-linux";
+        specialArgs = { inherit inputs; };
+        modules = [
+          apple-silicon.nixosModules.apple-silicon-support
+          ./hosts/air/hardware-configuration.nix
+          ./hosts/air/configuration.nix
+          # niri module + unstable-pin + the rest of the Wayland desktop surface
+          # are shared via modules/desktop.nix, imported from air's configuration.nix.
+          home-manager.nixosModules.home-manager
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.backupFileExtension = "hm-bak";
+            home-manager.sharedModules = [ nix-index-database.homeModules.nix-index ];
+            home-manager.users.arne = import ./hosts/air/home.nix;
+            home-manager.extraSpecialArgs = { inherit launcher llm-agents; };
+          }
+        ];
+      };
+
       # oink — headless server (gigahost.no). No desktop/niri machinery; disko
       # owns partitioning (ZFS rpool mirrored across two SSDs, tank data pool
       # on the 8 TB HDD).
@@ -137,9 +152,11 @@
         modules = [
           disko.nixosModules.disko
           sops-nix.nixosModules.sops
+          firsthouse.nixosModules.firsthouse
           ./hosts/oink/disko.nix
           ./hosts/oink/hardware-configuration.nix
           ./hosts/oink/configuration.nix
+          ./hosts/oink/firsthouse.nix
           home-manager.nixosModules.home-manager
           {
             home-manager.useGlobalPkgs = true;

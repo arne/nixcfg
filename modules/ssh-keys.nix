@@ -6,9 +6,9 @@
   ## trusted on every host (imported via modules/base.nix). Add a key here once
   ## and it lands on all hosts instead of being copied per-host / per-account.
   ##
-  ## This module wires the list into the `arne` login everywhere. Root is left
-  ## to each host: fox sets PermitRootLogin = "no" (root SSH disabled, so no
-  ## keys), while oink references `config.mine.sshKeys` for root during bring-up.
+  ## This module wires the list into the `arne` login everywhere. Root SSH is
+  ## disabled on every host (PermitRootLogin = "no"), so these keys are never
+  ## granted to root — access is via the `arne` account only.
   ###########################################################################
   options.mine.sshKeys = lib.mkOption {
     type = lib.types.listOf lib.types.str;
@@ -22,8 +22,8 @@
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFarbcucH4DqIkXSnIok8VxIJLiryiAu9Eud/GzNMLsJ oink"
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBhF6a+vyLLQl74q6BHVbqeVxstHUMwVyDM4649b81Bg fismen"
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAkjfCCcwrYPMff8OA6l5cJKaWBQ2RkbjcamyLib9uRM rootShell"
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIBoj+n9iDeEVkDm9Yms0KNjqChlhGFrP6Aokh/DFByX air"
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPmGloBn0yDmkJtsNEPQWYJdYBP1G0NNXeOw30r5801u ram"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDBPR+ja1Ki3aj1/In+i5mytGsgW38hGqKBHuaG78qJk air"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPmGloBn0yDmkJtsNEPQWYJdYBP1G0NNXeOw30r5801u fox"
     ];
   };
 

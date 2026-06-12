@@ -10,6 +10,53 @@
       { name = "pure"; src = pkgs.fishPlugins.pure.src; }
     ];
 
+    # `rebuild` — rebuild the current host from the flake, anywhere, on any OS.
+    # Lives in home-manager (not a NixOS module) so it works identically on
+    # NixOS and nix-darwin. ~/.nixcfg is the consistent checkout path on both;
+    # the config attr is left implicit so nixos-rebuild/darwin-rebuild pick the
+    # entry matching this machine's hostname. Extra args pass through, e.g.
+    # `rebuild boot` or `rebuild test`.
+    functions.rebuild = ''
+      set -l action $argv
+      test (count $argv) -eq 0; and set action switch
+      switch (uname)
+        case Darwin
+          sudo darwin-rebuild $action --flake ~/.nixcfg
+        case '*'
+          # `air` keeps its Asahi firmware out of the flake and reads it from
+          # /boot/asahi, which needs impure eval. Other hosts stay pure.
+          set -l extra
+          test (hostname) = air; and set extra --impure
+          sudo nixos-rebuild $action --flake ~/.nixcfg $extra
+      end
+    '';
+
+    # `clip` — copy a file's contents (or stdin) to the system clipboard.
+    # Picks the backend at runtime so the same definition works on Wayland
+    # (wl-copy), X11 (xclip/xsel) and macOS (pbcopy). Usage: `clip file`,
+    # `cat file | clip`, or `echo foo | clip`.
+    functions.clip = ''
+      set -l copy
+      if type -q wl-copy
+        set copy wl-copy
+      else if type -q xclip
+        set copy xclip -selection clipboard
+      else if type -q xsel
+        set copy xsel --clipboard --input
+      else if type -q pbcopy
+        set copy pbcopy
+      else
+        echo "clip: fant ingen clipboard-kommando (wl-copy/xclip/xsel/pbcopy)" >&2
+        return 1
+      end
+
+      if test (count $argv) -gt 0
+        command $copy <$argv[1]
+      else
+        command $copy
+      end
+    '';
+
     # fish_greeting is defined system-wide in modules/motd.nix so every user
     # gets the motd, not just this one.
 

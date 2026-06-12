@@ -10,7 +10,9 @@
   # Totoro wallpaper (blurred), centred password field in the bases
   # palette, big clock + date. The wallpaper is a loose file under
   # ~/wallpapers (not Nix-managed), referenced by absolute path like
-  # hyprpaper does. Font is the installed JetBrainsMono Nerd Font.
+  # hyprpaper does. Same Totoro frame as the desktop background, but the
+  # lighter JPG rather than the 4x PNG since hyprlock blurs it anyway. Font
+  # is the installed JetBrainsMono Nerd Font.
   programs.hyprlock = {
     enable = true;
     settings = {

@@ -1,0 +1,9 @@
+// air — MacBook Air (Apple Silicon, Asahi). Internal panel only.
+//
+// Fill in the real mode after first boot with `niri msg outputs`.
+// M2 Air panel is 2560x1664 @ ~60Hz; scale 2 gives ~1280x832 logical.
+output "eDP-1" {
+    mode "2560x1664@60.000"
+    scale 2
+    transform "normal"
+}

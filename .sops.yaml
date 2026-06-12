@@ -28,3 +28,10 @@ creation_rules:
       - age:
           - *arne
           - *fismen
+  # Admin tooling credentials (e.g. the code.bas.es forge token used by the
+  # `forge` CLI). Decrypted on demand by arne — NOT deployed to any host, so
+  # only the admin identity is a recipient (no host key).
+  - path_regex: secrets/admin\.yaml$
+    key_groups:
+      - age:
+          - *arne

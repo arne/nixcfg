@@ -1,0 +1,8 @@
+// fox — Strix Halo desktop, Apple Studio Display over USB4.
+//
+// Apple Studio Display exposes itself as two DP connectors (DSC dual-link).
+// DP-6 carries the real 5120x2880 stream. DP-5 is a phantom secondary stream
+// that niri otherwise treats as a separate tiny output at (0,0), eating window placement.
+output "DP-5" {
+    off
+}

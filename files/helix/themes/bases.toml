@@ -2,7 +2,9 @@
 # Drop in ~/.config/helix/themes/bases.toml, then in ~/.config/helix/config.toml: theme = "bases"
 
 # ── Editor / UI ──────────────────────────────────────
-"ui.background" = { bg = "bg" }
+# Editor background left unset so the terminal (ghostty) background shows
+# through — keeps ghostty's background-opacity transparency in helix too.
+"ui.background" = { }
 "ui.background.separator" = { fg = "border" }
 "ui.text" = { fg = "fg" }
 "ui.text.focus" = { fg = "fg", modifiers = ["bold"] }
@@ -10,7 +12,7 @@
 "ui.text.info" = { fg = "fg" }
 
 "ui.window" = { fg = "border" }
-"ui.gutter" = { bg = "bg" }
+"ui.gutter" = { }
 "ui.gutter.selected" = { bg = "surface" }
 
 "ui.cursor" = { fg = "bg", bg = "muted" }
@@ -41,7 +43,7 @@
 "ui.statusline.separator" = { fg = "border" }
 
 "ui.bufferline" = { fg = "muted", bg = "surface" }
-"ui.bufferline.background" = { bg = "bg" }
+"ui.bufferline.background" = { }
 "ui.bufferline.active" = { fg = "fg", bg = "raised", modifiers = ["bold"] }
 
 "ui.popup" = { fg = "fg", bg = "surface" }
