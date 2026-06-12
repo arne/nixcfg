@@ -229,3 +229,45 @@ nixos-anywhere --flake .#fismen \
 - The Claude session driving this ran ON fismen — Phase 4 (rescue/reinstall)
   must be driven from oink or fox, and flake builds happen on oink
   (no nix on fismen).
+
+## Phase 4+5 — COMPLETED 2026-06-13 (~00:50)
+
+Reinstall and full move-back done in one night. Facts that differ from the
+plan above, for the record:
+
+- Port 22/IPv4 to fismen is filtered at Hetzner's edge (Robot firewall) —
+  the entire install was driven over IPv6 (2a01:4f9:4b:2141::2). The
+  Robot firewall still needs a 22/v4 allow (operator TODO).
+- `zgenhostid` in the kexec installer needs `rm /etc/hostid` first (the
+  image ships a store symlink; /etc is an overlay).
+- New tailnet IP: **100.102.255.10** (bind lines + vault/azf DNS updated,
+  commit 51c8457).
+- Live `incus copy` of running instances fails on a criu state dump —
+  Phase 5 went stop→copy→start per instance (phase5-cutover.sh on fismen;
+  the presync idea was abandoned). Instances with snapshots (tv, posta,
+  vaultwarden) additionally need `--instance-only`: their snapshot configs
+  reference profiles the target can't resolve.
+- All Phase 2 copies carried a LOCAL eth0 device (the IP pin override), so
+  every move-back copy needed `-d eth0,network=incusbr0` alongside the pin.
+- DNS flips were scripted with dns-flip.sh + the caddy CF token; most
+  *.fismen.no records are CNAMEs to the apex, so far fewer A records than
+  vhosts. `--all` sweeps catch kokosbananas.tjue.net — that one belongs on
+  OINK (sandbox); it was flipped back by hand.
+- Final check-vhosts: baseline-clean. Only the documented pre-existing
+  failures remain (ai.*, keys, video, dev.bas.es); trappeprodusenten.no is
+  healthier than baseline (was down pre-migration).
+
+### Decommission checklist (deliberately NOT done — rollback window)
+
+The stopped old copies of all instances remain on oink. After a few days
+of stable operation:
+
+1. oink: remove the fismen-interim.nix import + FISMEN-INTERIM blocks in
+   hosts/oink/incus.nix (keep `package = pkgs.incus` — one-way DB upgrade),
+   rebuild. This retires oink's caddy/nyheter/bbs and the stale cert copy.
+2. oink: `incus config unset core.https_address`, `incus config trust
+   remove fismen`; the 8443 nft allow was a manual rule and dies with the
+   next rebuild on its own. fismen: `incus remote remove oink`.
+3. oink: delete the stopped instance copies + /var/www + /opt/nyheter +
+   /opt/bbs + /var/lib/caddy (cert storage lives on fismen now).
+4. ~/fismen-backup tarballs on oink: keep (belt and braces).
