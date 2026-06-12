@@ -167,7 +167,9 @@ oink must have KVM (it does).
 
 Cutover, per wave: stop on fismen → final `incus copy --refresh` → start on
 oink → flip the wave's DNS records → `./check-vhosts.sh`.
-- Wave 0 (canary): nytta.fismen.no (static, /var/www only — no instance).
+- Wave 0 (canary): chess.fismen.no (static, /var/www only — no instance).
+  (Original canary nytta.fismen.no was retired 2026-06-12 — vhost removed
+  from the Caddyfile; delete its DNS record + /var/www/nytta at leisure.)
 - Wave 1: tinyauth (forward_auth backend for fismen.no/status.fismen.no),
   then low-risk singles (cal, clips, coffee, bookmarks, …).
 - Wave 2: the posta group together (posta, posta-web, chat-posta).

@@ -215,11 +215,6 @@ totalfrihet.no {
 	file_server
 }
 
-nytta.fismen.no {
-        root * /var/www/nytta
-        file_server
-}
-
 www.totalfrihet.no {
 	redir https://totalfrihet.no{uri} permanent
 }
