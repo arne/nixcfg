@@ -36,7 +36,7 @@
     package =
       (pkgs.caddy.override { buildGoModule = pkgs.buildGo126Module; }).withPlugins {
         plugins = [ "github.com/caddy-dns/cloudflare@v0.2.3" ];
-        hash = "sha256-e9GJDsvFTLEMkrmBz0kB4omUeaMbhhAt4CnP4q31FE4=";
+        hash = "sha256-iTox1dCA6PiEiT1TIX3QWF64waYQpI/s/XCqIeRQ5Sc=";
       };
   };
 
@@ -55,6 +55,24 @@
     # .storage-seeded anyway). sops-nix places "caddy/cloudflare-env" exactly
     # here once hosts/fismen/secrets.nix is armed.
     serviceConfig.EnvironmentFile = "-/run/secrets/caddy/cloudflare-env";
+
+    # TAILNET-BIND RACE GATE: the Caddyfile pins `bind 100.102.255.10` (fismen's
+    # tailnet IP). tailscaled assigns that address asynchronously *after* it
+    # authenticates, so on a cold boot caddy can reach ExecStart before the IP
+    # exists and die with "bind: cannot assign requested address". Order after
+    # tailscaled and block ExecStart until the address is actually present on a
+    # local interface (the caddy module sets no ExecStartPre of its own).
+    after = [ "tailscaled.service" ];
+    wants = [ "tailscaled.service" ];
+    serviceConfig.ExecStartPre = pkgs.writeShellScript "wait-for-tailnet-ip" ''
+      ip=100.102.255.10
+      for _ in $(seq 1 60); do
+        ${pkgs.iproute2}/bin/ip -4 -o addr show | ${pkgs.gnugrep}/bin/grep -qw "$ip" && exit 0
+        sleep 1
+      done
+      echo "wait-for-tailnet-ip: $ip not assigned after 60s" >&2
+      exit 1
+    '';
   };
 
   # Static-site vhosts serve from /var/www/<site> — migrate those trees over
