@@ -12,6 +12,10 @@
 keys:
   - &arne age1jpzmmw4f98tnrmsqjrh38n42sppcvjp9s2n8cmm4cugh2nwn0fjs4de7cp
   - &oink age1elegl8s50r7843kcsh34mnaj5muafpsnpafy0mmrnfqy3acspfnqgs2dx5
+  # PRE-GENERATED for the NixOS reinstall (key pair lives in
+  # oink:~/fismen-install/etc/ssh/, injected at install time via
+  # `nixos-anywhere --extra-files` so sops decrypts on first boot).
+  - &fismen age1ccp4cl9uemh34rqzsur07lmlf9wtxg58n484gmsrw9yl59vx6fds4m8gh7
 
 creation_rules:
   - path_regex: secrets/oink\.yaml$
@@ -19,6 +23,11 @@ creation_rules:
       - age:
           - *arne
           - *oink
+  - path_regex: secrets/fismen\.yaml$
+    key_groups:
+      - age:
+          - *arne
+          - *fismen
   # Admin tooling credentials (e.g. the code.bas.es forge token used by the
   # `forge` CLI). Decrypted on demand by arne — NOT deployed to any host, so
   # only the admin identity is a recipient (no host key).

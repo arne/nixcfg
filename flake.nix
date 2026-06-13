@@ -71,9 +71,17 @@
       url = "git+https://code.bas.es/arne/firsthouse";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Pull-based GitOps for the servers (oink, fismen): each polls this repo's
+    # main branch and deploys its own nixosConfiguration. Settings live in
+    # modules/comin.nix.
+    comin = {
+      url = "github:nlewo/comin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, niri, apple-silicon, launcher, llm-agents, disko, sops-nix, nix-index-database, firsthouse, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, niri, apple-silicon, launcher, llm-agents, disko, sops-nix, nix-index-database, firsthouse, comin, ... }:
     {
       nixosConfigurations.fox = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
@@ -91,6 +99,32 @@
             home-manager.sharedModules = [ nix-index-database.homeModules.nix-index ];
             home-manager.users.arne = import ./hosts/fox/home.nix;
             home-manager.extraSpecialArgs = { inherit launcher llm-agents; };
+          }
+        ];
+      };
+
+      # fismen — headless server (Hetzner dedicated). The main estate: Caddy
+      # (~40 vhosts) + ~32 Incus instances + nyheter/bbs host services. ZFS
+      # rpool mirrored across the two NVMes (disko); BIOS GRUB (see
+      # hosts/fismen/disko.nix). Migration log: hosts/fismen/MIGRATION.md.
+      nixosConfigurations.fismen = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = { inherit inputs; };
+        modules = [
+          disko.nixosModules.disko
+          sops-nix.nixosModules.sops
+          comin.nixosModules.comin
+          ./modules/comin.nix
+          ./hosts/fismen/disko.nix
+          ./hosts/fismen/hardware-configuration.nix
+          ./hosts/fismen/configuration.nix
+          home-manager.nixosModules.home-manager
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.backupFileExtension = "hm-bak";
+            home-manager.sharedModules = [ nix-index-database.homeModules.nix-index ];
+            home-manager.users.arne = import ./hosts/fismen/home.nix;
           }
         ];
       };
@@ -129,6 +163,8 @@
           disko.nixosModules.disko
           sops-nix.nixosModules.sops
           firsthouse.nixosModules.firsthouse
+          comin.nixosModules.comin
+          ./modules/comin.nix
           ./hosts/oink/disko.nix
           ./hosts/oink/hardware-configuration.nix
           ./hosts/oink/configuration.nix

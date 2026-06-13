@@ -120,28 +120,26 @@
   services.greetd = {
     enable = true;
     settings = {
-      # Autologin into niri. A console greeter (tuigreet) can't render on the
-      # tiled+DSC Studio Display (fbcon limitation) — only a Wayland compositor
-      # drives it. So we autologin niri directly; revisit a Wayland greeter
-      # (ReGreet/cage) later if a login gate is wanted.
-      #
-      # MUST be initial_session, not default_session: default_session runs niri
-      # *as the greeter*, so logind classes the session "greeter", which it
-      # refuses to lock ("Session does not support lock screen"). That makes
-      # `loginctl lock-session` — used by hypridle for idle- and sleep-locking —
-      # a silent no-op. initial_session autologins as a real *user* session,
-      # which logind will lock. (default_session is still required by greetd as
-      # the greeter shown after logout; re-running niri-session keeps the
-      # Studio Display driveable until a Wayland greeter is wired up.)
-      initial_session = {
-        command = "niri-session";
-        user = "arne";
-      };
+      # tuigreet on the console, gating niri behind a real login. The previous
+      # autologin worked around "fbcon can't render on the tiled+DSC display" —
+      # no longer true: on kernel 7.0+ the panel negotiates single-stream 5K
+      # via DSC and fbcon binds to amdgpudrmfb at 5120x2880 (verified
+      # 2026-06-13), so a console greeter renders fine. Sessions started
+      # through the greeter are real user sessions, so logind lock (hypridle's
+      # idle/sleep locking) works without the old initial_session contortion.
       default_session = {
-        command = "niri-session";
-        user = "arne";
+        command = "${pkgs.greetd.tuigreet}/bin/tuigreet --time --remember --asterisks --cmd niri-session";
+        user = "greeter";
       };
     };
+  };
+
+  # fbcon runs at native 5K — the default console font is unreadably small
+  # there. Terminus at 32px keeps the VTs (and tuigreet) legible.
+  console = {
+    packages = [ pkgs.terminus_font ];
+    font = "ter-132n";
+    earlySetup = true;
   };
 
   # The shared Wayland desktop surface (niri, xdg.portal, PipeWire base, polkit,

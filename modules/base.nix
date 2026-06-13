@@ -1,7 +1,7 @@
 { pkgs, inputs, ... }:
 
 {
-  imports = [ ./motd.nix ./tailscale.nix ./ssh-keys.nix ];
+  imports = [ ./motd.nix ./tailscale.nix ./ssh-keys.nix ./avahi.nix ];
 
   nixpkgs.config.allowUnfree = true;
 
@@ -40,6 +40,7 @@
     python3
     go
     jq                                # used by ~/.claude/statusline-command.sh (and generally useful)
+    glow                              # terminal markdown previewer
     nh                                # nicer nixos-rebuild wrapper (diffs, gc helpers)
     (callPackage ../pkgs/forge.nix { })
     inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.claude-code  # numtide, rebuilt daily; cached at cache.numtide.com (see substituters above)
