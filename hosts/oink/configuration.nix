@@ -5,10 +5,6 @@
     ../../modules/base.nix
     ./incus.nix
     ./secrets.nix
-    # FISMEN-INTERIM: temporary home for the fismen estate during its NixOS
-    # reinstall — remove this import (plus the marked blocks in ./incus.nix)
-    # after the move-back. See hosts/fismen/MIGRATION.md.
-    ./fismen-interim.nix
   ];
 
   ###########################################################################
@@ -50,7 +46,8 @@
   };
 
   networking.firewall.enable = true;
-  networking.firewall.allowedTCPPorts = [ 22 ];
+  # 22: WAN SSH. 80/443: Caddy (HTTP→HTTPS redirect + ACME challenge, and HTTPS).
+  networking.firewall.allowedTCPPorts = [ 22 80 443 ];
 
   ###########################################################################
   ## Tailscale — base.nix enables the service ("client"); oink is also an exit
@@ -115,6 +112,41 @@
   ## cache, and the shared CLI tooling (git/htop/claude-code/…) all live in
   ## modules/base.nix; oink adds nothing host-specific here.
   ###########################################################################
+
+  ###########################################################################
+  ## Navidrome — self-hosted music streaming (Subsonic-compatible). Binds
+  ## 0.0.0.0 but the port is opened ONLY on tailscale0, so it's reachable from
+  ## the tailnet (http://oink:4533) and never from the public WAN. Music lives
+  ## in /srv/music, pre-created arne:users 0755 so arne manages the files while
+  ## the navidrome service user only reads them (the module's tmpfiles rule is
+  ## ":700" = create-only, so it leaves the existing dir's owner/mode alone).
+  ###########################################################################
+  services.navidrome = {
+    enable = true;
+    settings = {
+      Address = "0.0.0.0";
+      Port = 4533;
+      MusicFolder = "/srv/music";
+    };
+  };
+  networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 4533 ];
+
+  ###########################################################################
+  ## Caddy — public reverse proxy / TLS terminator. Fronts the kokosbananas
+  ## project, which runs in its own Incus container (10.100.0.122) and is
+  ## exposed to the host by the container's `web` proxy device (host
+  ## 0.0.0.0:8080 -> 127.0.0.1:8080 inside the container). Caddy gets an
+  ## automatic Let's Encrypt cert for the hostname (DNS A record already points
+  ## at this box's 185.181.63.4) and reverse-proxies cleartext to localhost:8080.
+  ## Ports 80/443 are opened in the firewall block above.
+  ###########################################################################
+  services.caddy = {
+    enable = true;
+    email = "arnefismen@gmail.com";  # ACME account — Let's Encrypt expiry notices.
+    virtualHosts."kokosbananas.tjue.net".extraConfig = ''
+      reverse_proxy localhost:8080
+    '';
+  };
 
   # It's a pig, not a fox.
   motd.animal = "piggy";
