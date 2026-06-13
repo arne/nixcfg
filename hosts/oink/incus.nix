@@ -98,23 +98,6 @@
             "ipv6.address" = "none";
           };
         }
-        ## FISMEN-INTERIM — second bridge reproducing live fismen's incusbr0
-        ## exactly (same subnet + ULA) so the ~32 migrated instances keep
-        ## their 10.228.107.x addresses and the Caddyfile targets stay valid.
-        ## The sandbox-egress chains above match only `iifname "incusbr0"`,
-        ## so this bridge is NOT hardened — and sandboxes can't reach it
-        ## (10.228.107.0/24 falls inside their 10.0.0.0/8 drop). Remove this
-        ## block (and the fismen profile below) after the move-back.
-        {
-          name = "incusbr1";
-          type = "bridge";
-          config = {
-            "ipv4.address" = "10.228.107.1/24";
-            "ipv4.nat" = "true";
-            "ipv6.address" = "fd42:4920:83b2:cb09::1/64";
-            "ipv6.nat" = "true";
-          };
-        }
       ];
 
       # Baseline profile: root disk on the SSD pool + a NIC on the bridge. The
@@ -132,26 +115,6 @@
               type = "nic";
               name = "eth0";
               network = "incusbr0";
-            };
-          };
-        }
-        ## FISMEN-INTERIM — profile for the migrated fismen instances:
-        ## same SSD pool, but NIC on incusbr1 (10.228.107.0/24). Every
-        ## `incus copy fismen:<x>` MUST use `-p fismen` (plus a per-instance
-        ## pinned eth0 ipv4.address — see hosts/fismen/MIGRATION.md table).
-        ## Remove after the move-back.
-        {
-          name = "fismen";
-          devices = {
-            root = {
-              type = "disk";
-              path = "/";
-              pool = "default";
-            };
-            eth0 = {
-              type = "nic";
-              name = "eth0";
-              network = "incusbr1";
             };
           };
         }
