@@ -5,6 +5,7 @@
     ../../home/fish.nix
     ../../home/cli.nix
     ../../home/git.nix
+    ../../home/claude.nix
     ../../home/ghostty.nix
     ../../home/helix.nix
     ../../home/firefox.nix
