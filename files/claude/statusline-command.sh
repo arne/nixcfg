@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 input=$(cat)
 cwd=$(echo "$input" | jq -r '.cwd // .workspace.current_dir // empty')
 folder=$(basename "$cwd")
