@@ -7,6 +7,7 @@
     ../../home/fish.nix
     ../../home/cli.nix
     ../../home/git.nix
+    ../../home/claude.nix
     ../../home/helix.nix
     ../../home/yazi.nix
   ];
