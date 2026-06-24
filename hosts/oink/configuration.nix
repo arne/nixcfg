@@ -81,6 +81,18 @@
     shell = pkgs.fish;
     # SSH keys come from the shared list in modules/ssh-keys.nix (config.mine.sshKeys).
   };
+
+  # oystein — oink-only account with passwordless sudo (wheel). Key inline
+  # rather than the shared list since this account does not exist elsewhere.
+  users.users.oystein = {
+    isNormalUser = true;
+    description = "Oystein";
+    extraGroups = [ "wheel" "incus" ];
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAvxD8FA3gl4XFGhMSwO5885bxLNT0UT/Rj/v+vncRhY oystein@carbon-x1"
+    ];
+  };
+
   security.sudo.wheelNeedsPassword = false;
 
   programs.fish.enable = true;
