@@ -9,6 +9,7 @@
     ../../home/ghostty.nix
     ../../home/helix.nix
     ../../home/firefox.nix
+    ../../home/helium.nix
     ../../home/appearance.nix
     ../../home/yazi.nix
     ../../home/pi.nix

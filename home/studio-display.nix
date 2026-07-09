@@ -40,14 +40,27 @@ let
     '';
   };
 
-  # Disable any output niri could not identify (no make/model/serial — on
-  # this machine that is exactly the Studio Display's vestigial second
-  # stream). Triggered by the niri event stream: WorkspacesChanged fires
+  # Two jobs, both driven off the niri event stream: WorkspacesChanged fires
   # whenever output topology changes (session start, hotplug, link-drop
-  # re-enumeration), which is precisely when the phantom can (re)appear.
+  # re-enumeration), which is exactly when the phantom can (re)appear AND when
+  # the real panel comes back dark.
+  #
+  #   1. sweep — disable any output niri could not identify (no
+  #      make/model/serial; on this machine that is exactly the Studio
+  #      Display's vestigial second stream).
+  #
+  #   2. relight — niri re-attaches the panel and sets the 5K mode on hotplug,
+  #      but the panel does not re-train its DP link on a bare reconnect (same
+  #      reason the idle blank uses a modeset, not DPMS — see above), so it
+  #      stays black while niri thinks it is driving it. A full off/on modeset
+  #      on the absent→present edge forces the retrain.
+  #
+  # Self-triggering is a non-issue: the loop is sequential and real_present
+  # reads live state, so by the time relight's own off/on WorkspacesChanged
+  # events are processed the panel is already back to present — no fresh edge.
   studio-display-guard = pkgs.writeShellApplication {
     name = "studio-display-guard";
-    runtimeInputs = [ pkgs.jq ];
+    runtimeInputs = [ pkgs.jq pkgs.coreutils ];
     text = ''
       sweep() {
         niri msg --json outputs \
@@ -59,10 +72,37 @@ let
               niri msg output "$out" off || true
             done
       }
+
+      # Is the real Studio Display currently attached (enabled or not)?
+      real_present() {
+        niri msg --json outputs \
+          | jq -e 'any(.[]; .make == "Apple Computer Inc"
+                            and .model == "StudioDisplay")' >/dev/null
+      }
+
+      # Force a DP-link retrain via a full disable/enable modeset.
+      relight() {
+        niri msg output "${displayId}" off || true
+        sleep 2
+        niri msg output "${displayId}" on || true
+      }
+
+      # Seed presence from the current state so a session that starts
+      # already-lit never gets a spurious bounce; only a later absent→present
+      # transition relights.
       sweep
+      if real_present; then was_present=1; else was_present=0; fi
+
       niri msg --json event-stream | while read -r ev; do
         case "$ev" in
-          *WorkspacesChanged*) sweep ;;
+          *WorkspacesChanged*)
+            sweep
+            if real_present; then now_present=1; else now_present=0; fi
+            if [ "$now_present" = 1 ] && [ "$was_present" = 0 ]; then
+              relight
+            fi
+            was_present="$now_present"
+            ;;
         esac
       done
     '';

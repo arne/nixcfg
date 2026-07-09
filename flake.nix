@@ -36,10 +36,28 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Helium browser (privacy-focused, ungoogled-chromium-based) — not in
+    # nixpkgs proper. Repackages upstream's .deb release and exposes a
+    # home-manager `programs.helium` module (mirrors home/firefox.nix's
+    # programs.firefox style).
+    helium = {
+      url = "github:oxcl/nix-flake-helium-browser";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # AI coding agents (pi, claude-code, codex, …). Numtide rebuilds these
     # daily against their own pinned nixpkgs and serves prebuilt outputs from
     # cache.numtide.com — don't `follows = nixpkgs` or every cache hit dies.
     llm-agents.url = "github:numtide/llm-agents.nix";
+
+    # Herdr — terminal multiplexer for coding agents ("run all your coding
+    # agents from one terminal, on any box, even over ssh"). No upstream
+    # binary cache, so `follows = nixpkgs` to dedupe the build against our
+    # own pin rather than pulling a second nixpkgs closure.
+    herdr = {
+      url = "github:ogulcancelik/herdr";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     # Declarative disk partitioning for the oink server host.
     disko = {
@@ -81,7 +99,7 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, niri, apple-silicon, launcher, llm-agents, disko, sops-nix, nix-index-database, firsthouse, comin, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, niri, apple-silicon, launcher, llm-agents, disko, sops-nix, nix-index-database, firsthouse, comin, helium, ... }:
     {
       nixosConfigurations.fox = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
@@ -96,7 +114,7 @@
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
             home-manager.backupFileExtension = "hm-bak";
-            home-manager.sharedModules = [ nix-index-database.homeModules.nix-index ];
+            home-manager.sharedModules = [ nix-index-database.homeModules.nix-index helium.homeModules.default ];
             home-manager.users.arne = import ./hosts/fox/home.nix;
             home-manager.extraSpecialArgs = { inherit launcher llm-agents; };
           }
@@ -146,7 +164,7 @@
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
             home-manager.backupFileExtension = "hm-bak";
-            home-manager.sharedModules = [ nix-index-database.homeModules.nix-index ];
+            home-manager.sharedModules = [ nix-index-database.homeModules.nix-index helium.homeModules.default ];
             home-manager.users.arne = import ./hosts/air/home.nix;
             home-manager.extraSpecialArgs = { inherit launcher llm-agents; };
           }

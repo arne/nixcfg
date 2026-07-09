@@ -280,6 +280,46 @@
         "type": "github"
       }
     },
+    "helium": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1782988707,
+        "narHash": "sha256-DpPXlGHoN+1f9qoii2lO1Lk2wzNxVjCNgpkyGgioKdo=",
+        "owner": "oxcl",
+        "repo": "nix-flake-helium-browser",
+        "rev": "8fbad8d395cc8c82619ac496f85803ee13537a97",
+        "type": "github"
+      },
+      "original": {
+        "owner": "oxcl",
+        "repo": "nix-flake-helium-browser",
+        "type": "github"
+      }
+    },
+    "herdr": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1783557335,
+        "narHash": "sha256-Mv0kHI1VwK6IQorTkCeLML3zCzh5KqZyvfsizIN30YU=",
+        "owner": "ogulcancelik",
+        "repo": "herdr",
+        "rev": "36b2e2f5463139a284483732131ce44977881239",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ogulcancelik",
+        "repo": "herdr",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -614,6 +654,8 @@
         "comin": "comin",
         "disko": "disko",
         "firsthouse": "firsthouse",
+        "helium": "helium",
+        "herdr": "herdr",
         "home-manager": "home-manager",
         "launcher": "launcher",
         "llm-agents": "llm-agents_2",

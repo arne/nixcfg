@@ -44,6 +44,7 @@
     nh                                # nicer nixos-rebuild wrapper (diffs, gc helpers)
     (callPackage ../pkgs/forge.nix { })
     inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.claude-code  # numtide, rebuilt daily; cached at cache.numtide.com (see substituters above)
+    inputs.herdr.packages.${pkgs.stdenv.hostPlatform.system}.default  # agent multiplexer (herdr.dev); builds from source, no upstream cache
     # motd binary + global config/greeting live in ./motd.nix.
   ];
 
