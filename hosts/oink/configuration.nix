@@ -132,20 +132,89 @@
   networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 4533 ];
 
   ###########################################################################
+  ## oauth2-proxy — session gateway in front of the Golten Stories backend.
+  ##
+  ## Two instances share the same Pocket ID at tilgang.goltenstories.no but
+  ## use separate OIDC client registrations so their sessions are independent:
+  ##
+  ##   4180  goltenstories.no   client-id kokosbananas
+  ##   4181  kokosbananas.tjue.net   client-id kokosbananas-dev
+  ##
+  ## Both read their OAUTH2_PROXY_CLIENT_SECRET and OAUTH2_PROXY_COOKIE_SECRET
+  ## from sops-decrypted env files. The client secrets start as "CHANGEME" —
+  ## replace them in sops after registering the OIDC clients in Pocket ID:
+  ##   1. Log into https://tilgang.goltenstories.no as admin.
+  ##   2. Register two clients:
+  ##        kokosbananas      redirect https://goltenstories.no/oauth2/callback
+  ##        kokosbananas-dev  redirect https://kokosbananas.tjue.net/oauth2/callback
+  ##   3. sops secrets/oink.yaml  ← set the two CLIENT_SECRET values.
+  ##   4. nixos-rebuild switch (or comin picks it up on next push).
+  ##
+  ## Caddy wires these up with forward_auth (see below).
+  ###########################################################################
+  services.oauth2-proxy = {
+    enable = true;
+    provider = "oidc";
+    oidcIssuerUrl = "https://tilgang.goltenstories.no";
+    clientID = "kokosbananas";
+    # OAUTH2_PROXY_CLIENT_SECRET + OAUTH2_PROXY_COOKIE_SECRET via env file.
+    keyFile = config.sops.secrets."goltenstories/oauth2-proxy-env".path;
+    cookie = {
+      secure = true;
+      domain = ".goltenstories.no";
+      name = "_oauth2_proxy";
+    };
+    extraConfig.cookie-samesite = "lax";
+    httpAddress = "http://127.0.0.1:4180";
+    email.domains = [ "*" ];  # Any Pocket ID user may access.
+    redirectURL = "https://goltenstories.no/oauth2/callback";
+    upstream = "static://200";  # Validation only — Caddy does the proxying.
+  };
+
+  # Second instance for kokosbananas.tjue.net (different domain → different cookie).
+  # Uses the NixOS oauth2-proxy module's user/group but runs as a separate unit.
+  systemd.services.oauth2-proxy-tjue = {
+    description = "oauth2-proxy — kokosbananas.tjue.net";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    serviceConfig = {
+      User = "oauth2-proxy";
+      Group = "oauth2-proxy";
+      Restart = "always";
+      EnvironmentFile = config.sops.secrets."goltenstories/oauth2-proxy-tjue-env".path;
+      ExecStart = let
+        args = [
+          "--provider=oidc"
+          "--oidc-issuer-url=https://tilgang.goltenstories.no"
+          "--client-id=kokosbananas-dev"
+          "--redirect-url=https://kokosbananas.tjue.net/oauth2/callback"
+          "--upstream=static://200"
+          "--http-address=127.0.0.1:4181"
+          "--email-domain=*"
+          "--cookie-secure=true"
+          "--cookie-name=_oauth2_proxy_tjue"
+          "--cookie-domain=kokosbananas.tjue.net"
+          "--cookie-samesite=lax"
+        ];
+      in "${pkgs.oauth2-proxy}/bin/oauth2-proxy ${builtins.concatStringsSep " " (map (a: "'${a}'") args)}";
+    };
+  };
+
+  ###########################################################################
   ## Caddy — public reverse proxy / TLS terminator.
   ##
-  ## goltenstories.no — Golten Stories podcast platform. The kokosbananas Go
-  ## binary runs inside the kokosbananas container (10.100.0.122); the container's
-  ## `web` proxy device forwards host:8080 → container:8080. Public paths
-  ## (/feed/**, /audio/**, /images/**) are ungated; the admin/lab is protected
-  ## by Pocket ID passkey auth enforced at the edge (forward_auth to
-  ## oauth2-proxy — separate nix module, not yet wired).
+  ## goltenstories.no and kokosbananas.tjue.net — Golten Stories backend.
+  ## The kokosbananas Go binary runs in its Incus container (10.100.0.122);
+  ## the container's `web` proxy device forwards host:8080 → container:8080.
   ##
-  ## tilgang.goltenstories.no — Pocket ID passkey auth provider for the above.
-  ## Runs in the services container (10.100.0.141) on port 1412, exposed via
-  ## the container's `pocket-id-goltenstories` proxy device.
+  ## Auth pattern (both vhosts):
+  ##   @public  /feed/*, /audio/*, /images/*  → direct proxy (no auth)
+  ##   /oauth2/*                              → oauth2-proxy (handles OIDC flow)
+  ##   everything else                        → forward_auth → proxy
   ##
-  ## kokosbananas.tjue.net — internal dev/test alias for the same backend.
+  ## tilgang.goltenstories.no — Pocket ID (OIDC provider). Runs in the
+  ## services container (10.100.0.141) on port 1412.
   ##
   ## Ports 80/443 are opened in the firewall block above.
   ###########################################################################
@@ -156,13 +225,35 @@
       log {
         output file /var/log/caddy/access-goltenstories.no.log
       }
-      reverse_proxy localhost:8080
+      @public path /feed/* /audio/* /images/*
+      handle @public {
+        reverse_proxy localhost:8080
+      }
+      handle /oauth2/* {
+        reverse_proxy localhost:4180
+      }
+      handle {
+        forward_auth localhost:4180 {
+          uri /oauth2/auth
+          copy_headers X-Auth-Request-User X-Auth-Request-Email
+        }
+        reverse_proxy localhost:8080
+      }
     '';
     virtualHosts."tilgang.goltenstories.no".extraConfig = ''
       reverse_proxy localhost:1412
     '';
     virtualHosts."kokosbananas.tjue.net".extraConfig = ''
-      reverse_proxy localhost:8080
+      handle /oauth2/* {
+        reverse_proxy localhost:4181
+      }
+      handle {
+        forward_auth localhost:4181 {
+          uri /oauth2/auth
+          copy_headers X-Auth-Request-User X-Auth-Request-Email
+        }
+        reverse_proxy localhost:8080
+      }
     '';
   };
 
