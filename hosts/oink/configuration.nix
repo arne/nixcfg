@@ -132,20 +132,61 @@
   networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 4533 ];
 
   ###########################################################################
-  ## Caddy — public reverse proxy / TLS terminator. Fronts the kokosbananas
-  ## project, which runs in its own Incus container (10.100.0.122) and is
-  ## exposed to the host by the container's `web` proxy device (host
-  ## 0.0.0.0:8080 -> 127.0.0.1:8080 inside the container). Caddy gets an
-  ## automatic Let's Encrypt cert for the hostname (DNS A record already points
-  ## at this box's 185.181.63.4) and reverse-proxies cleartext to localhost:8080.
+  ## Caddy — public reverse proxy / TLS terminator.
+  ##
+  ## goltenstories.no — Golten Stories podcast platform. The kokosbananas Go
+  ## binary runs inside the kokosbananas container (10.100.0.122); the container's
+  ## `web` proxy device forwards host:8080 → container:8080. Public paths
+  ## (/feed/**, /audio/**, /images/**) are ungated; the admin/lab is protected
+  ## by Pocket ID passkey auth enforced at the edge (forward_auth to
+  ## oauth2-proxy — separate nix module, not yet wired).
+  ##
+  ## tilgang.goltenstories.no — Pocket ID passkey auth provider for the above.
+  ## Runs in the services container (10.100.0.141) on port 1412, exposed via
+  ## the container's `pocket-id-goltenstories` proxy device.
+  ##
+  ## kokosbananas.tjue.net — internal dev/test alias for the same backend.
+  ##
   ## Ports 80/443 are opened in the firewall block above.
   ###########################################################################
   services.caddy = {
     enable = true;
     email = "arnefismen@gmail.com";  # ACME account — Let's Encrypt expiry notices.
+    virtualHosts."goltenstories.no".extraConfig = ''
+      log {
+        output file /var/log/caddy/access-goltenstories.no.log
+      }
+      reverse_proxy localhost:8080
+    '';
+    virtualHosts."tilgang.goltenstories.no".extraConfig = ''
+      reverse_proxy localhost:1412
+    '';
     virtualHosts."kokosbananas.tjue.net".extraConfig = ''
       reverse_proxy localhost:8080
     '';
+  };
+
+  ###########################################################################
+  ## goltenstories.no health check — curl the main page every 5 min and fail
+  ## the unit (journald alert) if it returns a non-2xx or times out. Extend
+  ## with an OnFailure= notification unit if email/push alerting is wanted.
+  ###########################################################################
+  systemd.services.goltenstories-health = {
+    description = "goltenstories.no HTTP health check";
+    after = [ "network-online.target" "caddy.service" ];
+    wants = [ "network-online.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.curl}/bin/curl --fail --max-time 15 --silent --output /dev/null https://goltenstories.no";
+    };
+  };
+  systemd.timers.goltenstories-health = {
+    wantedBy = [ "timers.target" ];
+    description = "goltenstories.no health check every 5 minutes";
+    timerConfig = {
+      OnCalendar = "*:0/5";
+      Persistent = true;
+    };
   };
 
   # It's a pig, not a fox.
