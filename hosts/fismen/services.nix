@@ -19,6 +19,31 @@
     lib.mkForce "-/run/secrets/nyheter/oidc-env";
 
   ###########################################################################
+  ## Teater — teaterfestivalen i Fjaler (teater.fismen.no). Go-app
+  ## med SQLite, bygd fra github.com/arne/teater.
+  ###########################################################################
+  systemd.services.teater = {
+    description = "Teater — Teaterfestivalen i Fjaler";
+    wantedBy = [ "multi-user.target" ];
+    wants = [ "network-online.target" ];
+    after = [ "network-online.target" ];
+
+    serviceConfig = {
+      ExecStart = "${pkgs.callPackage ../../pkgs/teater.nix { }}/bin/teaterfestivalen";
+      Restart = "always";
+      RestartSec = 5;
+      DynamicUser = true;
+      StateDirectory = "teater";
+      WorkingDirectory = "/var/lib/teater";
+    };
+
+    environment = {
+      PORT = "8084";
+      DB_PATH = "/var/lib/teater/festival.db";
+    };
+  };
+
+  ###########################################################################
   ## beszel-agent — host metrics for the beszel hub (monitor.fismen.no, an
   ## incus instance). nixpkgs ships the package; KEY/TOKEN go in the env file
   ## (sops: beszel/agent-env):

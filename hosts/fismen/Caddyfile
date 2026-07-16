@@ -143,6 +143,10 @@ nyheter.fismen.no {
 	reverse_proxy 127.0.0.1:8083
 }
 
+teater.fismen.no {
+	reverse_proxy 127.0.0.1:8084
+}
+
 arne.fismen.no {
 	reverse_proxy 10.228.107.175:8080
 }
