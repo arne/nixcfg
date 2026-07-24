@@ -37,10 +37,18 @@
 
     # Same override as fismen: withPlugins rebuilds caddy with the DEFAULT Go
     # builder (1.25) on 25.11, but caddy's go.mod needs >= 1.26.3.
+    #
+    # PLUGIN v0.2.4, NOT fismen's v0.2.3 — deliberate divergence. Cloudflare
+    # now issues account/user tokens prefixed cfat_/cfut_, and v0.2.3's
+    # validation rejects them outright ("API token appears invalid"), so it
+    # cannot be used with any token minted today. v0.2.4 is exactly one
+    # commit ahead: caddy-dns/cloudflare#123, which accepts the new shapes.
+    # fismen still works only because its token predates the change; it will
+    # hit this the moment that token is rotated.
     package =
       (pkgs.caddy.override { buildGoModule = pkgs.buildGo126Module; }).withPlugins {
-        plugins = [ "github.com/caddy-dns/cloudflare@v0.2.3" ];
-        hash = "sha256-iTox1dCA6PiEiT1TIX3QWF64waYQpI/s/XCqIeRQ5Sc=";
+        plugins = [ "github.com/caddy-dns/cloudflare@v0.2.4" ];
+        hash = "sha256-Q0lgI8MY90u/5R/xXBVPQWCZBN7dUZ0kcuDxD0xd0fo=";
       };
 
     virtualHosts."ha.azf.no".extraConfig = ''
