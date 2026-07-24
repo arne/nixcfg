@@ -3,6 +3,10 @@
 {
   imports = [
     ../../modules/base.nix
+    ../../modules/services/home-assistant.nix
+    ./secrets.nix
+    ./backup.nix
+    ./caddy.nix
   ];
 
   ###########################################################################
@@ -19,7 +23,7 @@
   ## Wi-Fi (wlp0s20f3) is intentionally left unconfigured — same network as
   ## the wired NIC, so there's no point running two supplicants.
   ###########################################################################
-  networking.hostName = "servo";
+  networking.hostName = "meow";
   networking.useDHCP = false;
   networking.useNetworkd = true;
   systemd.network.enable = true;
@@ -27,6 +31,10 @@
     matchConfig.MACAddress = "1c:69:7a:01:07:bd";
     networkConfig.DHCP = "yes";
     linkConfig.RequiredForOnline = "routable";
+    # The router's lease still hands out the old name ("servo"), and a
+    # transient hostname from DHCP overrides the static one set above — so
+    # without this the box keeps answering to its pre-rename name.
+    dhcpV4Config.UseHostname = false;
   };
 
   # LAN + tailnet SSH only. Nothing else exposed from the home box.
@@ -34,7 +42,29 @@
   networking.firewall.allowedTCPPorts = [ 22 ];
 
   ###########################################################################
-  ## SSH — key-only, no root, no passwords. The `servo` key is already in
+  ## Subnet router — makes the home LAN (10.69.68.0/24) reachable from the
+  ## whole tailnet, so devices that will never run Tailscale themselves (the
+  ## router, printers, IoT) are addressable by their LAN IP from anywhere.
+  ##
+  ## "server" (vs the base.nix default of "client") is what flips the
+  ## net.ipv4.ip_forward / ipv6 forwarding sysctls; without it the routes are
+  ## advertised but nothing is actually forwarded.
+  ##
+  ## extraSetFlags — not extraUpFlags — because the latter is only applied by
+  ## tailscaled-autoconnect, which nixpkgs gates on authKeyFile being set, and
+  ## auth here is manual (see modules/tailscale.nix). extraSetFlags runs
+  ## `tailscale set` on every boot, so the advertisement is declarative.
+  ##
+  ## MANUAL STEP: routes are not trusted until approved. After the first
+  ## deploy, approve 10.69.68.0/24 for this host at
+  ## https://login.tailscale.com/admin/machines (or add an autoApprovers rule
+  ## to the tailnet ACL). Until then this changes nothing.
+  ###########################################################################
+  services.tailscale.useRoutingFeatures = "server";
+  services.tailscale.extraSetFlags = [ "--advertise-routes=10.69.68.0/24" ];
+
+  ###########################################################################
+  ## SSH — key-only, no root, no passwords. The `meow` key is already in
   ## modules/ssh-keys.nix, so this box's own key trusts the rest of the fleet
   ## as soon as it comes up.
   ###########################################################################
@@ -89,7 +119,7 @@
   console.keyMap = "us";
 
   # Home box, keeps the media archive.
-  motd.animal = "owl";
+  motd.animal = "cat";
 
   # First release installed against. Do NOT bump casually.
   system.stateVersion = "25.11";

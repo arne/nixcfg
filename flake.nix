@@ -180,29 +180,30 @@
         ];
       };
 
-      # servo — home box (Intel NUC-class, i5-8259U, 256 GB NVMe). No mirror
+      # meow — home box (Intel NUC-class, i5-8259U, 256 GB NVMe). No mirror
       # and no ZFS: plain GPT + ext4 root + swap partition via disko (see
-      # hosts/servo/disko.nix). The 3.6 TB Seagate BUP over USB (labelled
+      # hosts/meow/disko.nix). The 3.6 TB Seagate BUP over USB (labelled
       # "form") is the media/photo archive and is mounted read-write at
       # /mnt/form with `nofail`; disko does NOT touch it. Comin drives
       # subsequent deploys the same way as fismen/oink.
-      nixosConfigurations.servo = nixpkgs.lib.nixosSystem {
+      nixosConfigurations.meow = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         specialArgs = { inherit inputs; };
         modules = [
           disko.nixosModules.disko
           comin.nixosModules.comin
+          sops-nix.nixosModules.sops
           ./modules/comin.nix
-          ./hosts/servo/disko.nix
-          ./hosts/servo/hardware-configuration.nix
-          ./hosts/servo/configuration.nix
+          ./hosts/meow/disko.nix
+          ./hosts/meow/hardware-configuration.nix
+          ./hosts/meow/configuration.nix
           home-manager.nixosModules.home-manager
           {
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
             home-manager.backupFileExtension = "hm-bak";
             home-manager.sharedModules = [ nix-index-database.homeModules.nix-index ];
-            home-manager.users.arne = import ./hosts/servo/home.nix;
+            home-manager.users.arne = import ./hosts/meow/home.nix;
           }
         ];
       };

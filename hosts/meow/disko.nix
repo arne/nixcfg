@@ -1,4 +1,4 @@
-# Declarative disk layout for servo (disko).
+# Declarative disk layout for meow (disko).
 #
 # Single 256 GB Samsung NVMe, UEFI boot (systemd-boot on the ESP). Home box —
 # no mirror, no ZFS: a plain GPT layout with an ESP, a swap partition, and an
