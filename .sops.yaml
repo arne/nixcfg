@@ -16,6 +16,9 @@ keys:
   # oink:~/fismen-install/etc/ssh/, injected at install time via
   # `nixos-anywhere --extra-files` so sops decrypts on first boot).
   - &fismen age1ccp4cl9uemh34rqzsur07lmlf9wtxg58n484gmsrw9yl59vx6fds4m8gh7
+  # meow — derived from its /etc/ssh/ssh_host_ed25519_key (generated during
+  # the 2026-07 reinstall, when the host was still called servo).
+  - &meow age14cskhykzq4ufpeqsqt4m6qrjvq8cc2vpkxaqa8q4shwpdrpjcymqkecf5e
 
 creation_rules:
   - path_regex: secrets/oink\.yaml$
@@ -28,6 +31,11 @@ creation_rules:
       - age:
           - *arne
           - *fismen
+  - path_regex: secrets/meow\.yaml$
+    key_groups:
+      - age:
+          - *arne
+          - *meow
   # Admin tooling credentials (e.g. the code.bas.es forge token used by the
   # `forge` CLI). Decrypted on demand by arne — NOT deployed to any host, so
   # only the admin identity is a recipient (no host key).

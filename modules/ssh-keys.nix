@@ -15,7 +15,14 @@
     description = "Arne's trusted SSH public keys, shared across all hosts.";
     default = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN8r647rf/5m/GEXN1kIccmJItzT1sdI0k4FGYSq5AKi arne@mac"
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEoX8GswCzYqOs94smClAJBxAO0ZX2U2WaKgriZO2Z7R servo"
+      # Regenerated 2026-07-24, when the box was reinstalled and renamed
+      # servo -> meow. The previous entry here (…IEoX8GswCzYqOs94smClAJBx…)
+      # is NOT this machine's key — no matching private key exists anywhere
+      # under /home/arne on meow, whose keypair was created fresh after the
+      # reinstall. It is still registered on the GitHub account, so if its
+      # private half turns out to live on some other machine, re-add it under
+      # that machine's own label rather than restoring it here.
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICvd5YpeUcMgEOR/p/cwnu+toJyb/VjNcoUDSGIKd4ts meow"
       "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHb1GcfjCCMlzVsZw5Zku7UvbF3QrFPbP+kxFDU4a+H/9p2HalYD43ZkaJQphQMYqC1MIQd4Cjmg1RTbUTneC+M= aPad"
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJkHOi39HCigHCOneTKIiY+C809n6d3sNHd3hoy2Uq21 aMini"
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM8iwTusmiXgGpx7VxMXJ/3U6LbTbkEPw+dv4538dThs orbit"
