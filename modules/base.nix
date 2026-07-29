@@ -42,6 +42,10 @@
     jq                                # used by ~/.claude/statusline-command.sh (and generally useful)
     glow                              # terminal markdown previewer
     nh                                # nicer nixos-rebuild wrapper (diffs, gc helpers)
+    ghostty.terminfo                  # TERM=xterm-ghostty entry, fleet-wide: ghostty is our
+                                      # terminal, so every host (incl. headless boxes we SSH
+                                      # into) needs its terminfo or tmux/hx break with
+                                      # "missing or unsuitable terminal: xterm-ghostty".
     (callPackage ../pkgs/forge.nix { })
     inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.claude-code  # numtide, rebuilt daily; cached at cache.numtide.com (see substituters above)
     # motd binary + global config/greeting live in ./motd.nix.
