@@ -1,0 +1,146 @@
+# herdr — configured to mirror the tmux setup as closely as herdr allows.
+# Managed by Nix (home/herdr.nix); edit here, not in ~/.config.
+#
+# Reference: `herdr --default-config` prints every key with its default.
+# Reload a running server after a rebuild with `herdr server reload-config`.
+#
+# Where herdr has no equivalent for something tmux does, it is called out in a
+# comment rather than silently dropped. See the "No herdr equivalent" section
+# at the bottom.
+
+# We've already made the choices this flow asks about.
+onboarding = false
+
+# ── Theme: the bases dark palette ─────────────────────
+#
+# Same hex values as files/tmux/bases.conf, remapped onto herdr's colour
+# tokens. `vesper` is the closest warm-dark built-in, so anything we don't
+# override stays in the right family.
+#
+# NOTE: theme.auto_switch is deliberately off. It only switches between
+# *built-in* themes, and [theme.custom] is a single flat override set — there
+# is no way to give it a second (light) palette. So bases-light has no herdr
+# counterpart; this is dark-only.
+[theme]
+name = "vesper"
+
+[theme.custom]
+accent = "#4a9f82"      # tmux status-left bg / pane-active-border / clock
+panel_bg = "#1a1815"    # status-style bg
+surface0 = "#201e1a"    # window-status-current bg, message/menu/popup bg
+surface1 = "#2c2924"    # pane-border-style fg
+surface_dim = "#141210" # the fg used *on* accent blocks in tmux
+overlay0 = "#3a3630"    # mode-style bg, menu/popup border
+overlay1 = "#4a4640"    # dim window index
+text = "#ede8de"        # window-status-current name, message fg
+subtext0 = "#857e75"    # status-style fg, inactive window name
+green = "#4a9f82"
+teal = "#4a9f82"
+yellow = "#e07800"      # tmux amber (status-right date, activity)
+peach = "#e07800"
+red = "#d95050"         # window-status-bell-style
+blue = "#5a8fcc"        # tmux rename/move/go/find prompt blocks
+mauve = "#5a8fcc"       # no purple in bases; reuse blue
+
+[terminal]
+# Left empty on purpose: herdr falls back to $SHELL, which home-manager
+# already points at fish. Hardcoding a store path here would go stale.
+# default_shell = ""
+
+# tmux inherits the current pane's cwd on split/new-window. "follow" is the
+# same behaviour.
+new_cwd = "follow"
+
+# ── Keys ──────────────────────────────────────────────
+#
+# tmux prefix is C-a (programs.tmux.prefix in home/tmux.nix), so herdr's
+# ctrl+b default has to go.
+#
+# Bindings below are grouped as: identical to tmux's, remapped to match tmux,
+# and herdr-only actions left at their defaults.
+[keys]
+prefix = "ctrl+a"
+
+# --- Already identical to the tmux binding, listed for the record -----------
+new_tab = "prefix+c"        # tmux: new-window
+next_tab = "prefix+n"       # tmux: next-window
+previous_tab = "prefix+p"   # tmux: previous-window
+switch_tab = "prefix+1..9"  # tmux: select-window (baseIndex = 1, so 1..9 lines up)
+close_pane = "prefix+x"     # tmux: kill-pane
+zoom = "prefix+z"           # tmux: resize-pane -Z
+workspace_picker = "prefix+w"  # tmux: choose-tree
+
+# --- Remapped to match tmux ------------------------------------------------
+
+# tmux splits with | and - (home/tmux.nix unbinds " and %). herdr's naming is
+# rotated relative to tmux's: tmux "split-window -h" puts panes side by side,
+# which herdr calls split_vertical. Keys match tmux; names don't.
+split_vertical = "prefix+|"     # tmux: bind | split-window -h
+split_horizontal = "prefix+minus"  # tmux: bind - split-window -v
+
+# tmux: bind r source-file. herdr ships r as resize_mode and puts reload on
+# shift+R, so the two swap — and resize lands on `=`, which is what
+# tmux-grow-pane is bound to. Both tmux keys survive.
+reload_config = "prefix+r"
+resize_mode = "prefix+="
+
+detach = "prefix+d"         # tmux: detach-client (herdr default was prefix+q)
+rename_tab = "prefix+comma" # tmux: bind , command-prompt rename-window
+close_tab = "prefix+ampersand"  # tmux: kill-window
+rename_workspace = "prefix+$"   # tmux: bind $ rename-session
+last_pane = "prefix+semicolon"  # tmux: last-pane
+
+# tmux uses ( and ) to walk sessions; workspaces are the nearest herdr concept.
+previous_workspace = "prefix+("
+next_workspace = "prefix+)"
+
+# home/tmux.nix keeps keyMode = "emacs" and never rebinds select-pane, so pane
+# movement in tmux is prefix+arrows. Keep herdr's hjkl and add the arrows.
+focus_pane_left = ["prefix+h", "prefix+left"]
+focus_pane_down = ["prefix+j", "prefix+down"]
+focus_pane_up = ["prefix+k", "prefix+up"]
+focus_pane_right = ["prefix+l", "prefix+right"]
+
+# tmux: bind f find-window, bind ' select-window by index. Both are "jump
+# somewhere by name/number", which is herdr's goto.
+goto = ["prefix+g", "prefix+f", "prefix+'"]
+
+# --- herdr-only actions, left at their defaults ----------------------------
+# help = "prefix+?"  settings = "prefix+s"  toggle_sidebar = "prefix+b"
+# new_workspace = "prefix+shift+n"  close_workspace = "prefix+shift+d"
+# new_worktree = "prefix+shift+g"   rename_pane = "prefix+shift+p"
+# edit_scrollback = "prefix+e"      cycle_pane_next = "prefix+tab"
+# There is no tmux counterpart for these, so there is nothing to mirror.
+
+[ui]
+# tmux creates a window immediately on prefix+c; herdr prompts for a name
+# first. Turn the prompt off to match.
+prompt_new_tab_name = false
+
+# tmux: set -g pane-border-style / pane-active-border-style — borders on.
+pane_borders = true
+
+# tmux draws single-line shared borders between panes.
+pane_gaps = false
+
+[advanced]
+# tmux: historyLimit = 50000 (lines). herdr caps by bytes, not lines, so this
+# is an approximation: 50k lines x ~200 bytes/line.
+scrollback_limit_bytes = 10000000
+
+# ── No herdr equivalent ───────────────────────────────
+#
+# These parts of home/tmux.nix have nothing to map onto in herdr 0.7.5:
+#
+#   - status-left / status-right. herdr's sidebar is not a format string, so
+#     the Oslo-time clock and date (`TZ=Europe/Oslo date`) cannot be
+#     reproduced. Closest lever is [ui.sidebar.*] rows, which only take a
+#     fixed token set (state_icon, workspace, tab, agent, branch, ...) plus
+#     custom values pushed in via `herdr pane report-metadata`.
+#   - The command-prompt colour blocks (@prompt-cmd, @prompt-rename, ...).
+#     herdr has no command prompt to restyle.
+#   - copy-mode bindings (bind Escape copy-mode, j/k halfpage). herdr's copy
+#     mode is prefix+[ and is not exposed as a rebindable action.
+#   - extended-keys / terminal-features / allow-passthrough. These are tmux
+#     working around being a terminal-in-a-terminal; herdr handles its own.
+#   - bases-light. See the [theme] note above.

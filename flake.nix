@@ -79,9 +79,22 @@
       url = "github:nlewo/comin";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # herdr — terminal workspace manager / agent multiplexer. Installed on every
+    # host via modules/base.nix. Upstream is a Rust flake that builds against
+    # nixos-unstable with rust-overlay, so point its nixpkgs at our existing
+    # unstable pin rather than 25.11 (matches what upstream tests against, and
+    # reuses a tree we already fetch instead of adding a third nixpkgs). There
+    # is no upstream binary cache, so it compiles locally either way.
+    # PINNED to an immutable release tag, so `nix flake update herdr` is a
+    # no-op (it re-resolves the same tag). To take a new version, edit the tag
+    # below, then rebuild. herdr's own `herdr update` detects the /nix/store
+    # path and declines to self-replace, telling you to update through Nix.
+    herdr.url = "github:ogulcancelik/herdr/v0.7.5";
+    herdr.inputs.nixpkgs.follows = "nixpkgs-unstable";
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, niri, apple-silicon, launcher, llm-agents, disko, sops-nix, nix-index-database, firsthouse, comin, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, niri, apple-silicon, launcher, llm-agents, disko, sops-nix, nix-index-database, firsthouse, comin, herdr, ... }:
     {
       nixosConfigurations.fox = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";

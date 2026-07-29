@@ -48,6 +48,7 @@
                                       # "missing or unsuitable terminal: xterm-ghostty".
     (callPackage ../pkgs/forge.nix { })
     inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.claude-code  # numtide, rebuilt daily; cached at cache.numtide.com (see substituters above)
+    inputs.herdr.packages.${pkgs.stdenv.hostPlatform.system}.herdr             # agent multiplexer; upstream flake pinned to a release tag in flake.nix
     # motd binary + global config/greeting live in ./motd.nix.
   ];
 
