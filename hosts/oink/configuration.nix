@@ -202,7 +202,7 @@
         args = [
           "--provider=oidc"
           "--oidc-issuer-url=https://tilgang.goltenstories.no"
-          "--client-id=kokosbananas-dev"
+          "--client-id=a03eaba7-7beb-4738-abbb-150d76de31a6"
           "--redirect-url=https://kokosbananas.tjue.net/oauth2/callback"
           "--upstream=static://200"
           "--http-address=127.0.0.1:4181"
