@@ -177,6 +177,9 @@
       name = "_oauth2_proxy";
     };
     extraConfig.cookie-samesite = "lax";
+    # Pocket ID is passkey-based with admin-managed emails; it doesn't emit
+    # email_verified=true, so accept unverified emails (they're trusted here).
+    extraConfig.insecure-oidc-allow-unverified-email = true;
     httpAddress = "http://127.0.0.1:4180";
     email.domains = [ "*" ];  # Any Pocket ID user may access.
     redirectURL = "https://goltenstories.no/oauth2/callback";
@@ -208,6 +211,7 @@
           "--cookie-name=_oauth2_proxy_tjue"
           "--cookie-domain=kokosbananas.tjue.net"
           "--cookie-samesite=lax"
+          "--insecure-oidc-allow-unverified-email=true"
         ];
       in "${pkgs.oauth2-proxy}/bin/oauth2-proxy ${builtins.concatStringsSep " " (map (a: "'${a}'") args)}";
     };
