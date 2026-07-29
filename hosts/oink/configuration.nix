@@ -248,6 +248,13 @@
         forward_auth localhost:4180 {
           uri /oauth2/auth
           copy_headers X-Auth-Request-User X-Auth-Request-Email
+
+          # Unauthenticated → bounce to the Pocket ID sign-in flow instead of a
+          # bare 401, preserving the originally requested URL for post-login.
+          @needs-login status 401
+          handle_response @needs-login {
+            redir * /oauth2/sign_in?rd={uri}
+          }
         }
         reverse_proxy localhost:8080
       }
@@ -263,6 +270,12 @@
         forward_auth localhost:4181 {
           uri /oauth2/auth
           copy_headers X-Auth-Request-User X-Auth-Request-Email
+
+          # Unauthenticated → bounce to the Pocket ID sign-in flow.
+          @needs-login status 401
+          handle_response @needs-login {
+            redir * /oauth2/sign_in?rd={uri}
+          }
         }
         reverse_proxy localhost:8080
       }
