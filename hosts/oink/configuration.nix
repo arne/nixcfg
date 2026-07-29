@@ -168,7 +168,7 @@
     enable = true;
     provider = "oidc";
     oidcIssuerUrl = "https://tilgang.goltenstories.no";
-    clientID = "kokosbananas";
+    clientID = "a03eaba7-7beb-4738-abbb-150d76de31a6";  # Pocket ID auto-generated client ID.
     # OAUTH2_PROXY_CLIENT_SECRET + OAUTH2_PROXY_COOKIE_SECRET via env file.
     keyFile = config.sops.secrets."goltenstories/oauth2-proxy-env".path;
     cookie = {
