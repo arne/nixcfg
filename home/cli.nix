@@ -7,8 +7,9 @@
   # (see ./fish.nix), so each program's fish hooks wire themselves in.
 
   # tmux is a full module (prefix, themes, keybinds); pull it in here so every
-  # host gets it, not just fox.
-  imports = [ ./tmux.nix ];
+  # host gets it, not just fox. herdr rides along: its config mirrors tmux's
+  # prefix/splits/palette, so the two want to stay in sync.
+  imports = [ ./tmux.nix ./herdr.nix ];
 
   # GitHub CLI.
   programs.gh.enable = true;
