@@ -85,7 +85,7 @@ outline.fismen.no {
 }
 
 photos.fismen.no {
-	reverse_proxy cube.little-lenok.ts.net:2283
+	reverse_proxy roar.little-lenok.ts.net:2283
 }
 
 status.fismen.no {
