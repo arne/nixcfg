@@ -72,14 +72,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Pull-based GitOps for the servers (oink, fismen): each polls this repo's
-    # main branch and deploys its own nixosConfiguration. Settings live in
-    # modules/comin.nix.
-    comin = {
-      url = "github:nlewo/comin";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # herdr — terminal workspace manager / agent multiplexer. Installed on every
     # host via modules/base.nix. Upstream is a Rust flake that builds against
     # nixos-unstable with rust-overlay, so point its nixpkgs at our existing
@@ -94,7 +86,7 @@
     herdr.inputs.nixpkgs.follows = "nixpkgs-unstable";
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, niri, apple-silicon, launcher, llm-agents, disko, sops-nix, nix-index-database, firsthouse, comin, herdr, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, niri, apple-silicon, launcher, llm-agents, disko, sops-nix, nix-index-database, firsthouse, herdr, ... }:
     {
       nixosConfigurations.fox = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
@@ -126,8 +118,6 @@
         modules = [
           disko.nixosModules.disko
           sops-nix.nixosModules.sops
-          comin.nixosModules.comin
-          ./modules/comin.nix
           ./hosts/fismen/disko.nix
           ./hosts/fismen/hardware-configuration.nix
           ./hosts/fismen/configuration.nix
@@ -176,8 +166,6 @@
           disko.nixosModules.disko
           sops-nix.nixosModules.sops
           firsthouse.nixosModules.firsthouse
-          comin.nixosModules.comin
-          ./modules/comin.nix
           ./hosts/oink/disko.nix
           ./hosts/oink/hardware-configuration.nix
           ./hosts/oink/configuration.nix
@@ -197,16 +185,13 @@
       # and no ZFS: plain GPT + ext4 root + swap partition via disko (see
       # hosts/meow/disko.nix). The 3.6 TB Seagate BUP over USB (labelled
       # "form") is the media/photo archive and is mounted read-write at
-      # /mnt/form with `nofail`; disko does NOT touch it. Comin drives
-      # subsequent deploys the same way as fismen/oink.
+      # /mnt/form with `nofail`; disko does NOT touch it.
       nixosConfigurations.meow = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         specialArgs = { inherit inputs; };
         modules = [
           disko.nixosModules.disko
-          comin.nixosModules.comin
           sops-nix.nixosModules.sops
-          ./modules/comin.nix
           ./hosts/meow/disko.nix
           ./hosts/meow/hardware-configuration.nix
           ./hosts/meow/configuration.nix
