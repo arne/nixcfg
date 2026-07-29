@@ -21,4 +21,19 @@
   sops.secrets."tailscale-sandbox/oauth-client-secret" = {
     mode = "0400";
   };
+
+  # Environment files for the two oauth2-proxy instances that gate
+  # goltenstories.no and kokosbananas.tjue.net behind Pocket ID. Each file
+  # contains two lines: OAUTH2_PROXY_CLIENT_SECRET (from Pocket ID after
+  # OIDC client registration) and OAUTH2_PROXY_COOKIE_SECRET (random 32-byte
+  # base64, pre-generated in the repo — rotate with `sops secrets/oink.yaml`).
+  # Owner must be "oauth2-proxy" so the service unit can read the file.
+  sops.secrets."goltenstories/oauth2-proxy-env" = {
+    mode = "0400";
+    owner = "oauth2-proxy";
+  };
+  sops.secrets."goltenstories/oauth2-proxy-tjue-env" = {
+    mode = "0400";
+    owner = "oauth2-proxy";
+  };
 }
