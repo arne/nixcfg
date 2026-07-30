@@ -148,6 +148,27 @@ writeShellApplication {
       printf '%s\n' "$1" >"$f.tmp" 2>/dev/null && mv -f "$f.tmp" "$f" 2>/dev/null || true
     }
     read_cache() { local f; f=$(cache_file); [ -f "$f" ] && cat "$f"; }
+    # Fold a partial poll (e.g. `fleet status roar`, or the hosts just deployed)
+    # into the cache: replace those hosts' lines, keep every other host as-is.
+    merge_cache() {
+      local new=$1 cur line h
+      cur=$(read_cache)
+      [ -n "$cur" ] || { write_cache "$new"; return; }
+      local -A upd=()
+      while IFS= read -r line; do
+        [ -n "$line" ] || continue
+        h=''${line%%$'\t'*}; upd["$h"]=$line
+      done <<<"$new"
+      local out=""
+      while IFS= read -r line; do
+        [ -n "$line" ] || continue
+        h=''${line%%$'\t'*}
+        if [ -n "''${upd[$h]:-}" ]; then out+="''${upd[$h]}"$'\n'; unset "upd[$h]"
+        else out+="$line"$'\n'; fi
+      done <<<"$cur"
+      for h in "''${!upd[@]}"; do out+="''${upd[$h]}"$'\n'; done   # hosts new to the cache
+      write_cache "''${out%$'\n'}"
+    }
     cache_age() {
       local f secs; f=$(cache_file); [ -f "$f" ] || return 0
       secs=$(( $(date +%s) - $(stat -c %Y "$f") ))
@@ -199,7 +220,8 @@ writeShellApplication {
         echo "fleet: no hosts (no checkout found; pass host names or set FLEET_FLAKE)" >&2
         return 1
       }
-      [ "$#" -eq 0 ] && write_cache "$data"
+      # A full poll replaces the cache; a filtered one folds into it.
+      if [ "$#" -eq 0 ]; then write_cache "$data"; else merge_cache "$data"; fi
       render_table "$data" "live"
     }
 
@@ -311,14 +333,20 @@ writeShellApplication {
         gum confirm "Deploy: ''${targets[*]}?" || return 0
       fi
 
-      local h rc=0
+      local h rc=0 deployed=()
       for h in "''${targets[@]}"; do
         if deploy_one "$h"; then
-          gum style --foreground "$green" "✓ $h updated"
+          gum style --foreground "$green" "✓ $h updated"; deployed+=("$h")
         else
           gum style --foreground "$red" "✗ $h failed"; rc=1
         fi
       done
+
+      # Re-poll just the hosts we deployed and fold them into the cache, so a
+      # bare `fleet` reflects the deploy immediately instead of the stale line.
+      if [ "''${#deployed[@]}" -gt 0 ]; then
+        merge_cache "$(gather "''${deployed[@]}")" || true
+      fi
       return "$rc"
     }
 
