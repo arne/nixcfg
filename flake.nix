@@ -207,5 +207,30 @@
           }
         ];
       };
+
+      # roar — home compute/media box (bare-metal, i5-1235U, 62 GiB, UEFI; was
+      # Debian `cube`). ZFS rpool on the Kingston OS NVMe (disko); the fast
+      # (NVMe mirror, media/photos) and storage (3× 18 TB raidz1) data pools are
+      # imported, not created — see hosts/roar/hardware-configuration.nix.
+      # NVIDIA RTX 2000 Ada for compute (hosts/roar/nvidia.nix).
+      nixosConfigurations.roar = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = { inherit inputs; };
+        modules = [
+          disko.nixosModules.disko
+          sops-nix.nixosModules.sops
+          ./hosts/roar/disko.nix
+          ./hosts/roar/hardware-configuration.nix
+          ./hosts/roar/configuration.nix
+          home-manager.nixosModules.home-manager
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.backupFileExtension = "hm-bak";
+            home-manager.sharedModules = [ nix-index-database.homeModules.nix-index ];
+            home-manager.users.arne = import ./hosts/roar/home.nix;
+          }
+        ];
+      };
     };
 }
