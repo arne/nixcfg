@@ -47,10 +47,18 @@
                                       # into) needs its terminfo or tmux/hx break with
                                       # "missing or unsuitable terminal: xterm-ghostty".
     (callPackage ../pkgs/forge.nix { })
+    (callPackage ../pkgs/fleet.nix { })   # `fleet` / `fleet update` — status + deploy TUI (bases-themed)
     inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.claude-code  # numtide, rebuilt daily; cached at cache.numtide.com (see substituters above)
     inputs.herdr.packages.${pkgs.stdenv.hostPlatform.system}.herdr             # agent multiplexer; upstream flake pinned to a release tag in flake.nix
     # motd binary + global config/greeting live in ./motd.nix.
   ];
+
+  # Stamp each system with the flake revision it was built from, exposed via
+  # `nixos-version --json`. This is what lets `fleet` (pkgs/fleet.nix) tell
+  # up-to-date from behind by comparing cheap revision strings, instead of
+  # evaluating every host's closure. Clean tree → the commit hash; dirty tree
+  # → "<rev>-dirty".
+  system.configurationRevision = inputs.self.rev or inputs.self.dirtyRev or "unknown";
 
   # nix-ld — provide a stock dynamic loader at /lib64/ld-linux-x86-64.so.2 so
   # vendor-distributed Linux binaries (pip wheels, prebuilt CLIs, install
