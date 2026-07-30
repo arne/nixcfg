@@ -3,8 +3,9 @@
   # (air is aarch64/Asahi: its config evaluates only on air, where the
   # peripheral firmware lives) and are asleep most of the time, so listing them
   # would just mean a permanent 'unreachable' row and an undeployable picker
-  # entry. Set in modules/base.nix; overridable at runtime with $FLEET_EXCLUDE.
-, excludeHosts ? [ ]
+  # entry. Defaulted here so every call site (base.nix's systemPackages and the
+  # fleet-web timer) agrees; overridable at runtime with $FLEET_EXCLUDE.
+, excludeHosts ? [ "air" ]
 }:
 
 # fleet — a small TUI over the NixOS estate, themed to match `bases`
