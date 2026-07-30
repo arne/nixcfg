@@ -88,7 +88,8 @@ writeShellApplication {
       if [ "$h" = "$self" ]; then
         bash -c "$probe" 2>/dev/null
       else
-        ssh -o BatchMode=yes -o ConnectTimeout=6 "$h" bash 2>/dev/null <<<"$probe"
+        ssh -o BatchMode=yes -o ConnectTimeout=6 -o StrictHostKeyChecking=accept-new \
+          "$h" bash 2>/dev/null <<<"$probe"
       fi
     }
 
@@ -100,8 +101,12 @@ writeShellApplication {
       if [ "$r" != "$base" ]; then printf '%s+' "''${base:0:7}"; else printf '%s' "''${base:0:7}"; fi
     }
 
-    # ── status ─────────────────────────────────────────────────────────────
-    cmd_status() {
+    # ── gather ───────────────────────────────────────────────────────────────
+    # The single source of truth for both the CLI and the web page. Probes every
+    # host in parallel (bounding a run by one SSH timeout, not the sum) and emits
+    # one TSV line per host:  host \t activated \t shortrev \t statusword
+    # where statusword ∈ up-to-date | behind | reachable | unreachable.
+    gather() {
       local hosts=()
       if [ "$#" -gt 0 ]; then
         hosts=("$@")
@@ -109,47 +114,161 @@ writeShellApplication {
         # shellcheck disable=SC2207
         hosts=($(flake_hosts)) || true
       fi
-      if [ "''${#hosts[@]}" -eq 0 ]; then
-        echo "fleet: no hosts (no checkout found; pass host names or set FLEET_FLAKE)" >&2
-        return 1
-      fi
+      [ "''${#hosts[@]}" -gt 0 ] || return 1
 
       local want; want=$(want_rev)
-
-      # Probe every host in parallel — the only slow part is the SSH timeout on
-      # a downed host, so don't pay it serially.
       local tmp; tmp=$(mktemp -d)
       local h
       for h in "''${hosts[@]}"; do probe_host "$h" >"$tmp/$h" & done
       wait
 
-      local header rows="" out d rev status
-      header=$(printf '%s%-9s %-19s %-9s %s%s' \
-        "$a_muted" HOST ACTIVATED REV STATUS "$a_off")
+      local out d rev sw
       for h in "''${hosts[@]}"; do
         out=$(cat "$tmp/$h" 2>/dev/null)
         if [ -z "$out" ]; then
-          rows+=$(printf '%-9s %-19s %-9s %sunreachable%s' \
-            "$h" "-" "-" "$a_red" "$a_off")$'\n'
-          continue
+          printf '%s\t%s\t%s\t%s\n' "$h" "-" "-" "unreachable"; continue
         fi
         IFS=$'\t' read -r d rev <<<"$out"
-        if [ -z "$rev" ]; then
-          status="''${a_muted}reachable''${a_off}"
-        elif [ -n "$want" ] && [ "$rev" = "$want" ]; then
-          status="''${a_green}up-to-date''${a_off}"
-        else
-          status="''${a_orange}behind''${a_off}"
-        fi
-        rows+=$(printf '%-9s %-19s %-9s %b' \
-          "$h" "$d" "$(shortrev "$rev")" "$status")$'\n'
+        if [ -z "$rev" ]; then sw="reachable"
+        elif [ -n "$want" ] && [ "$rev" = "$want" ]; then sw="up-to-date"
+        else sw="behind"; fi
+        printf '%s\t%s\t%s\t%s\n' "$h" "$d" "$(shortrev "$rev")" "$sw"
       done
       rm -rf "$tmp"
+    }
 
-      local title body
+    # ── cache ────────────────────────────────────────────────────────────────
+    # gather()'s TSV, saved so a bare `fleet` can answer instantly from the last
+    # poll instead of re-probing the whole estate. On meow the hourly fleet-web
+    # timer keeps it warm; anywhere without a cache file, `fleet` just polls.
+    cache_file() { printf '%s/fleet/status.tsv' "''${XDG_CACHE_HOME:-$HOME/.cache}"; }
+    write_cache() {
+      local f; f=$(cache_file)
+      mkdir -p "$(dirname "$f")" 2>/dev/null || return 0
+      printf '%s\n' "$1" >"$f.tmp" 2>/dev/null && mv -f "$f.tmp" "$f" 2>/dev/null || true
+    }
+    read_cache() { local f; f=$(cache_file); [ -f "$f" ] && cat "$f"; }
+    cache_age() {
+      local f secs; f=$(cache_file); [ -f "$f" ] || return 0
+      secs=$(( $(date +%s) - $(stat -c %Y "$f") ))
+      if   [ "$secs" -lt 90 ];   then printf 'just now'
+      elif [ "$secs" -lt 3600 ]; then printf '%dm ago' "$((secs/60))"
+      else printf '%dh%dm ago' "$((secs/3600))" "$(((secs%3600)/60))"; fi
+    }
+
+    # ── render (terminal) ─────────────────────────────────────────────────────
+    render_table() {
+      local data=$1 caption=$2
+      local header rows="" h d rev sw color
+      header=$(printf '%s%-9s %-19s %-9s %s%s' \
+        "$a_muted" HOST ACTIVATED REV STATUS "$a_off")
+      while IFS=$'\t' read -r h d rev sw; do
+        case "$sw" in
+          up-to-date)  color=$a_green;;
+          behind)      color=$a_orange;;
+          unreachable) color=$a_red;;
+          *)           color=$a_muted;;
+        esac
+        rows+=$(printf '%-9s %-19s %-9s %s%s%s' \
+          "$h" "$d" "$rev" "$color" "$sw" "$a_off")$'\n'
+      done <<<"$data"
+
+      local title body sub=""
       title=$(gum style --bold --foreground "$ink" --background "$green" " fleet ")
-      body="$title"$'\n\n'"$header"$'\n'"''${rows%$'\n'}"
+      [ -n "$caption" ] && sub=$'\n'"$a_muted$caption$a_off"
+      body="$title$sub"$'\n\n'"$header"$'\n'"''${rows%$'\n'}"
       gum style --border rounded --border-foreground "$border" --padding "1 2" "$body"
+    }
+
+    # bare `fleet` — the cache if there is one (instant), else a live poll.
+    cmd_default() {
+      local data cap
+      data=$(read_cache)
+      if [ -n "$data" ]; then
+        cap="cached $(cache_age) · 'fleet status' to refresh"
+      else
+        data=$(gather) || { echo "fleet: no hosts (set FLEET_FLAKE)" >&2; return 1; }
+        write_cache "$data"; cap="live"
+      fi
+      render_table "$data" "$cap"
+    }
+
+    # `fleet status [host…]` — always a live poll; a full poll refreshes the cache.
+    cmd_status() {
+      local data; data=$(gather "$@") || {
+        echo "fleet: no hosts (no checkout found; pass host names or set FLEET_FLAKE)" >&2
+        return 1
+      }
+      [ "$#" -eq 0 ] && write_cache "$data"
+      render_table "$data" "live"
+    }
+
+    # ── web (HTML, styled after azf.no) ──────────────────────────────────────
+    # Reuses azf.no's own stylesheet + System-7 window chrome (it serves fonts
+    # with CORS *, so the cross-origin link picks up IBM Plex too); a small
+    # inline sheet adds the table and the one bit of colour. Emits to stdout;
+    # the hourly timer (hosts/meow/fleet-web.nix) writes it to a file Caddy
+    # serves at fleet.azf.no.
+    cmd_web() {
+      local data; data=$(gather) || { echo "fleet: no hosts" >&2; return 1; }
+      write_cache "$data"   # keeps a bare `fleet` warm between hourly renders
+      local now; now=$(date '+%Y-%m-%d %H:%M %Z')
+
+      cat <<'HTMLHEAD'
+    <!doctype html>
+    <html lang="en">
+    <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="refresh" content="900">
+    <title>fleet · azf.no</title>
+    <link rel="stylesheet" href="https://azf.no/style.css">
+    <style>
+      .window { max-width: 34rem; }
+      .content { padding: 1.75rem 1.75rem 1.5rem; text-align: left; }
+      h1 { text-align: center; margin-bottom: 1.5rem; }
+      table { width: 100%; border-collapse: collapse;
+              font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: .8125rem; }
+      th { text-align: left; font-weight: 500; color: var(--muted);
+           border-bottom: 1px solid var(--line); padding: 0 .75rem .4rem 0; }
+      td { padding: .4rem .75rem .4rem 0; border-bottom: 1px solid var(--desk-a); }
+      tr:last-child td { border-bottom: none; }
+      .rev { color: var(--muted); }
+      .s { font-weight: 500; }
+      .up-to-date  { color: #2f6b54; }
+      .behind      { color: #b5600a; }
+      .unreachable { color: #b23b3b; }
+      .reachable   { color: var(--muted); }
+      .gen { margin-top: 1.5rem; font-size: .75rem; color: var(--muted); text-align: center; }
+    </style>
+    </head>
+    <body>
+      <main class="window">
+        <div class="titlebar">
+          <span class="close-box"></span>
+          <span class="title">Fleet Status</span>
+        </div>
+        <div class="content">
+          <h1>fleet</h1>
+          <table>
+            <thead><tr><th>host</th><th>activated</th><th>rev</th><th>status</th></tr></thead>
+            <tbody>
+    HTMLHEAD
+
+      while IFS=$'\t' read -r h d rev sw; do
+        printf '          <tr><td>%s</td><td>%s</td><td class="rev">%s</td><td class="s %s">%s</td></tr>\n' \
+          "$h" "$d" "$rev" "$sw" "$sw"
+      done <<<"$data"
+
+      cat <<HTMLFOOT
+            </tbody>
+          </table>
+          <p class="gen">updated $now · refreshes hourly</p>
+        </div>
+      </main>
+    </body>
+    </html>
+    HTMLFOOT
     }
 
     # ── update ───────────────────────────────────────────────────────────────
@@ -204,13 +323,16 @@ writeShellApplication {
     }
 
     # ── dispatch ─────────────────────────────────────────────────────────────
-    case "''${1:-status}" in
-      status) shift 2>/dev/null || true; cmd_status "$@";;
+    case "''${1:-default}" in
+      default) cmd_default;;
+      status) shift; cmd_status "$@";;
+      web)    cmd_web;;
       update) shift; cmd_update "$@";;
       -h|--help|help)
         cat <<'USAGE'
-    fleet                  status of every host in the flake
-    fleet status [host…]   status, optionally filtered
+    fleet                  status from the last poll (cached, instant)
+    fleet status [host…]   live poll, optionally filtered
+    fleet web              render the HTML status page (used by fleet.azf.no)
     fleet update           pick host(s) to deploy
     fleet update [-y] HOST deploy HOST (-y skips the confirm)
     USAGE

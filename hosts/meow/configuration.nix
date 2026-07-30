@@ -8,6 +8,7 @@
     ./backup.nix
     ./caddy.nix
     ./beszel.nix
+    ./fleet-web.nix
     ../../modules/services/beszel.nix
   ];
 
