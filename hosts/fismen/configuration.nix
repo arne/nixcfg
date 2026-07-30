@@ -8,6 +8,7 @@
     ./services.nix
     ./secrets.nix
     ./restic-target.nix
+    ../../modules/services/beszel.nix
   ];
 
   ###########################################################################

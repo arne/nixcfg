@@ -44,30 +44,22 @@
   };
 
   ###########################################################################
-  ## beszel-agent — host metrics for the beszel hub (monitor.fismen.no, an
-  ## incus instance). nixpkgs ships the package; KEY/TOKEN go in the env file
-  ## (sops: beszel/agent-env):
-  ##   KEY=ssh-ed25519 ...
-  ##   TOKEN=...
+  ## beszel-agent — MOVED. This host's agent used to be a hand-rolled unit
+  ## here, dialling the old hub over a WebSocket (HUB_URL
+  ## https://monitor.fismen.no, KEY+TOKEN from sops beszel/agent-env). Both
+  ## ends have changed:
+  ##
+  ##   * the agent is now the upstream nixpkgs module, configured once for the
+  ##     whole fleet in ../../modules/services/beszel.nix (imported from this
+  ##     host's configuration.nix), and
+  ##   * the hub it reports to is the NixOS one on meow (hosts/meow/beszel.nix,
+  ##     https://status.azf.no), reached by the hub dialling fismen on
+  ##     :45876 over the tailnet — so no token, and nothing in sops.
+  ##
+  ## The old hub is still the Incus instance at 10.228.107.118, still fronted
+  ## by monitor.fismen.no in ./Caddyfile. It is untouched by this change and
+  ## will simply stop hearing from fismen. Retiring it is a separate step:
+  ## delete the container, then that vhost. sops still holds the now-unused
+  ## beszel/agent-env value; it can be pruned from secrets/fismen.yaml.
   ###########################################################################
-  systemd.services.beszel-agent = {
-    description = "Beszel Agent";
-    wantedBy = [ "multi-user.target" ];
-    wants = [ "network-online.target" ];
-    after = [ "network-online.target" ];
-
-    environment = {
-      PORT = "45876";
-      HUB_URL = "https://monitor.fismen.no";
-    };
-
-    serviceConfig = {
-      ExecStart = "${pkgs.beszel}/bin/beszel-agent";
-      EnvironmentFile = "-/run/secrets/beszel/agent-env"; # TODO: sops path
-      DynamicUser = true;
-      StateDirectory = "beszel-agent";
-      Restart = "on-failure";
-      RestartSec = 5;
-    };
-  };
 }

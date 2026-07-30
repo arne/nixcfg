@@ -2,7 +2,9 @@
 
 {
   ###########################################################################
-  ## Caddy — TLS termination for Home Assistant at https://ha.azf.no.
+  ## Caddy — TLS termination for meow's private services:
+  ##   ha.azf.no      -> Home Assistant  (modules/services/home-assistant.nix)
+  ##   status.azf.no  -> Beszel hub      (./beszel.nix)
   ##
   ## WHY A PUBLIC NAME FOR A PRIVATE SERVICE: `.internal` can never have a
   ## publicly-trusted certificate (that is the point of a reserved TLS-less
@@ -14,7 +16,7 @@
   ## an inbound connection. `ha.azf.no` deliberately has NO public A record;
   ## it resolves only via the UniFi DNS override to 10.69.68.3, so the name
   ## works on the LAN and (through the subnet router) the tailnet, and
-  ## resolves to nothing at all from the outside.
+  ## resolves to nothing at all from the outside. Same for status.azf.no.
   ##
   ## The caddy build and the (cf) DNS-01 idiom are lifted from
   ## hosts/fismen/caddy.nix — keep the plugin version in sync with that host.
@@ -27,7 +29,7 @@
   ##      identity):
   ##        sops set secrets/meow.yaml '["caddy"]["cloudflare-env"]' \
   ##          '"CLOUDFLARE_API_TOKEN=<token>"'
-  ##   3. Add the UniFi DNS record: ha.azf.no -> 10.69.68.3
+  ##   3. Add the UniFi DNS records: ha.azf.no and status.azf.no -> 10.69.68.3
   ###########################################################################
   services.caddy = {
     enable = true;
@@ -56,6 +58,14 @@
         dns cloudflare {env.CLOUDFLARE_API_TOKEN}
       }
       reverse_proxy 127.0.0.1:8123
+    '';
+
+    # Beszel hub. It binds 127.0.0.1:8090, so this vhost is the only way in.
+    virtualHosts."status.azf.no".extraConfig = ''
+      tls {
+        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+      }
+      reverse_proxy 127.0.0.1:8090
     '';
   };
 

@@ -5,6 +5,7 @@
     ../../modules/base.nix
     ./incus.nix
     ./secrets.nix
+    ../../modules/services/beszel.nix
   ];
 
   ###########################################################################

@@ -7,6 +7,8 @@
     ./secrets.nix
     ./backup.nix
     ./caddy.nix
+    ./beszel.nix
+    ../../modules/services/beszel.nix
   ];
 
   ###########################################################################
