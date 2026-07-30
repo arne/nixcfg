@@ -6,6 +6,7 @@
   ## than at fismen:
   ##   ha.azf.no      -> Home Assistant       (modules/services/home-assistant.nix)
   ##   status.azf.no  -> Beszel hub           (./beszel.nix)
+  ##   fleet.azf.no   -> fleet status page    (./fleet-web.nix)
   ##   ai.azf.no      -> open-webui on fox    (tailnet-only; moved off fismen)
   ##
   ## WHY A PUBLIC NAME FOR A PRIVATE SERVICE: `.internal` can never have a
@@ -79,6 +80,16 @@
         dns cloudflare {env.CLOUDFLARE_API_TOKEN}
       }
       reverse_proxy 127.0.0.1:8090
+    '';
+
+    # fleet.azf.no — the `fleet` status page. A static file rendered hourly by
+    # the fleet-web timer (./fleet-web.nix) into /var/lib/fleet-web.
+    virtualHosts."fleet.azf.no".extraConfig = ''
+      tls {
+        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+      }
+      root * /var/lib/fleet-web
+      file_server
     '';
 
     # ai.azf.no — open-webui on fox. MOVED HERE FROM fismen (it was the only
