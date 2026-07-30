@@ -125,6 +125,13 @@
   # Fonts, the Wayland/desktop system packages, and the BROWSER/TERMINAL
   # defaults are shared via modules/desktop.nix.
 
+  nix.settings.post-build-hook = toString (pkgs.writeShellScript "push-to-cachix" ''
+    set -eu
+    set -f
+    export HOME=/home/arne
+    exec ${pkgs.cachix}/bin/cachix push arne $OUT_PATHS
+  '');
+
   nix.gc = {
     automatic = true;
     dates = "weekly";
