@@ -47,7 +47,10 @@
                                       # into) needs its terminfo or tmux/hx break with
                                       # "missing or unsuitable terminal: xterm-ghostty".
     (callPackage ../pkgs/forge.nix { })
-    (callPackage ../pkgs/fleet.nix { })   # `fleet` / `fleet update` — status + deploy TUI (bases-themed)
+    # `fleet` / `fleet update` — status + deploy TUI (bases-themed). excludeHosts
+    # drops the laptops: they deploy locally and are usually asleep (air is also
+    # aarch64/Asahi, evaluable only on air), so fleet shouldn't try to manage them.
+    (callPackage ../pkgs/fleet.nix { excludeHosts = [ "air" ]; })
     inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.claude-code  # numtide, rebuilt daily; cached at cache.numtide.com (see substituters above)
     inputs.herdr.packages.${pkgs.stdenv.hostPlatform.system}.herdr             # agent multiplexer; upstream flake pinned to a release tag in flake.nix
     # motd binary + global config/greeting live in ./motd.nix.

@@ -1,4 +1,11 @@
-{ lib, writeShellApplication, gum, nix, openssh, coreutils }:
+{ lib, writeShellApplication, gum, nix, openssh, coreutils
+  # Hosts fleet does NOT manage — the laptops. They only ever deploy locally
+  # (air is aarch64/Asahi: its config evaluates only on air, where the
+  # peripheral firmware lives) and are asleep most of the time, so listing them
+  # would just mean a permanent 'unreachable' row and an undeployable picker
+  # entry. Set in modules/base.nix; overridable at runtime with $FLEET_EXCLUDE.
+, excludeHosts ? [ ]
+}:
 
 # fleet — a small TUI over the NixOS estate, themed to match `bases`
 # (files/tmux/bases.conf: green #4a9f82, orange #e07800, red #d95050, on the
@@ -60,10 +67,23 @@ writeShellApplication {
       done
     fi
 
+    # Laptops and anything else fleet shouldn't manage (see the package arg).
+    fleet_exclude="''${FLEET_EXCLUDE:-${lib.concatStringsSep " " excludeHosts}}"
+
+    # Every nixosConfiguration in the flake, minus the excluded set. Explicitly
+    # naming a host (e.g. `fleet status air`) still works — the exclusion only
+    # shapes the default list, the picker, and the web page.
     flake_hosts() {
       [ -n "$flakedir" ] || return 1
-      nix eval --raw "$flakedir#nixosConfigurations" --apply \
-        'cfgs: builtins.concatStringsSep " " (builtins.attrNames cfgs)' 2>/dev/null
+      local all arr h out=()
+      all=$(nix eval --raw "$flakedir#nixosConfigurations" --apply \
+        'cfgs: builtins.concatStringsSep " " (builtins.attrNames cfgs)' 2>/dev/null) || return 1
+      read -ra arr <<<"$all"
+      for h in "''${arr[@]}"; do
+        case " $fleet_exclude " in *" $h "*) continue;; esac
+        out+=("$h")
+      done
+      printf '%s' "''${out[*]}"
     }
 
     # Revision this checkout is at (git-aware, so it matches inputs.self.* at
