@@ -26,20 +26,19 @@
   ## through the subnet router from the tailnet, and nowhere else.
   ##
   ## State (the PocketBase DB, the hub's SSH key, all history) lives in
-  ## /var/lib/beszel-hub -> /var/lib/private/beszel-hub, since the upstream
-  ## unit runs under DynamicUser. It is NOT in hosts/meow/backup.nix: this is
+  ## /var/lib/beszel-hub/beszel_data -> /var/lib/private/beszel-hub/beszel_data,
+  ## since the upstream unit runs under DynamicUser and the hub puts its
+  ## PocketBase data one level down. It is NOT in hosts/meow/backup.nix: this is
   ## regenerable monitoring history, not data. If that changes, back up the
   ## whole directory — the DB is sqlite and the key must survive with it, or
   ## every agent's KEY has to be re-issued.
   ##
-  ## MANUAL STEPS:
+  ## MANUAL STEPS (the hub itself is deployed and running):
   ##   1. Add the UniFi DNS record: status.azf.no -> 10.69.68.3
-  ##   2. First visit to https://status.azf.no creates the admin account —
-  ##      do this immediately after the deploy; until an account exists the
-  ##      signup form is open to anyone who can resolve the name.
-  ##   3. Grab the hub's public key and turn the agents on — the full
-  ##      procedure is in modules/services/beszel.nix.
-  ##   4. Add one system per host, all with port 45876 and MagicDNS names so
+  ##   2. First visit to https://status.azf.no creates the admin account — do
+  ##      this immediately; until an account exists the signup form is open to
+  ##      anyone who can resolve the name.
+  ##   3. Add one system per host, all with port 45876 and MagicDNS names so
   ##      nothing breaks when a tailnet IP changes:
   ##
   ##        meow      127.0.0.1   (the hub's own box — no need to go via the tailnet)

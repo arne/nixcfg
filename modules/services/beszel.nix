@@ -5,29 +5,26 @@ let
   ## The hub's PUBLIC SSH key — the only thing an agent needs in order to
   ## trust the hub. It is a public key, so it belongs in git, not in sops.
   ##
-  ## IT IS EMPTY ON PURPOSE. The hub mints its own Ed25519 keypair the first
-  ## time it starts (internal/hub/hub.go: GetSSHKey writes
-  ## <dataDir>/id_ed25519 if absent), so the key does not exist until meow has
-  ## run the hub once. An agent started with an empty KEY would only
-  ## crash-loop, so `enable` below is tied to this string being non-empty:
-  ## importing this module before the key is known is a deliberate no-op.
+  ## The hub mints this keypair itself the first time it starts
+  ## (internal/hub/hub.go: GetSSHKey writes <dataDir>/id_ed25519 if absent),
+  ## so it could not be known until meow had run the hub once. The value below
+  ## was read off the live hub after that first start:
   ##
-  ## BRING-UP (one time, in this order):
-  ##   1. Deploy meow (hub + Caddy vhost). Agents stay off everywhere.
-  ##   2. Read the hub's public key, either from the UI's "Add System" dialog
-  ##      at https://status.azf.no, or on meow:
-  ##        sudo ssh-keygen -y -f /var/lib/private/beszel-hub/id_ed25519
-  ##      (/var/lib/beszel-hub is a symlink into /var/lib/private — the hub
-  ##      runs under DynamicUser, so the real state dir is the private one.)
-  ##   3. Paste it below, rebuild the whole fleet. Every agent comes up and
-  ##      accepts exactly that one key.
-  ##   4. In the UI, add one system per host (see the table in
-  ##      hosts/meow/beszel.nix).
+  ##   sudo ssh-keygen -y -f /var/lib/private/beszel-hub/beszel_data/id_ed25519
   ##
-  ## Rotating it: delete the hub's id_ed25519, restart beszel-hub, repeat from
-  ## step 2. Nothing else in the estate depends on this key.
+  ## Note BOTH path oddities: the hub runs under DynamicUser, so its state dir
+  ## is the /var/lib/private one (/var/lib/beszel-hub is a symlink into it),
+  ## and the key sits in the PocketBase data subdir `beszel_data/`, not at the
+  ## top of it. The same key is shown in the UI's "Add System" dialog.
+  ##
+  ## `enable` is tied to this being non-empty: an agent started with an empty
+  ## KEY would only crash-loop, so a fleet that does not yet have a hub gets a
+  ## no-op instead of five broken units.
+  ##
+  ## Rotating it: delete the hub's id_ed25519, restart beszel-hub, re-read the
+  ## key, paste here, rebuild the fleet. Nothing else depends on this key.
   ###########################################################################
-  hubPublicKey = "";
+  hubPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDzDAdsfp92ST1ERjjRUlRQCsBwmOqPYkXTmkzcZjoh3";
 in
 {
   ###########################################################################
