@@ -6,6 +6,7 @@
     ./nvidia.nix
     ./immich.nix
     ./ai.nix
+    ../../modules/services/beszel.nix
   ];
 
   ###########################################################################

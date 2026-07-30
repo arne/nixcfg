@@ -6,6 +6,7 @@
     ../../modules/desktop.nix
     ./llama.nix
     ./openwebui.nix
+    ../../modules/services/beszel.nix
   ];
 
   ###########################################################################

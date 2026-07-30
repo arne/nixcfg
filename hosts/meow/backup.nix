@@ -33,6 +33,15 @@
     paths = [
       "/var/lib/hass"
       "/var/lib/esphome"
+      # Beszel hub state (hosts/meow/beszel.nix). data.db holds the OIDC client
+      # secret, the superuser, and the system inventory; id_ed25519 is the hub
+      # key every agent's KEY is pinned to — regenerating it re-breaks the whole
+      # fleet. None of that is in this repo, so without this a reinstall of meow
+      # loses it. The real dir, not the /var/lib/beszel-hub symlink: DynamicUser
+      # puts state under /var/lib/private, and restic archives a symlink as a
+      # symlink rather than following it. restic runs as root, so the 0700
+      # private dir is readable.
+      "/var/lib/private/beszel-hub/beszel_data"
     ];
 
     exclude = [
@@ -48,6 +57,13 @@
       "/var/lib/hass/tts"
       "/var/lib/hass/deps"
       "/var/lib/esphome/.esphome/build"
+      # SQLite shared-memory index — pure runtime scratch, rebuilt when the DB
+      # is next opened, and always mid-write. The -wal is kept so recent commits
+      # aren't lost; SQLite replays it on restore. data.db is a live WAL-mode
+      # file, so as with hass a snapshot taken during a write can be torn — the
+      # prior daily snapshot is the fallback, and the config here changes rarely
+      # (the fleet-critical id_ed25519 is written once and then static).
+      "/var/lib/private/beszel-hub/beszel_data/*.db-shm"
     ];
 
     # The host key is root-owned; restic's ssh needs to be pointed at it

@@ -8,8 +8,9 @@
 #   ./check-vhosts.sh 185.181.63.4     # force-resolve every host to this IP
 #                                      # (pre-flip smoke test of the new box)
 #
-# Tailnet-only vhosts (vault.fismen.no, ai.azf.no) only answer from inside
-# the tailnet; run from a tailnet machine or expect them to fail elsewhere.
+# Tailnet-only vhosts (vault.fismen.no) only answer from inside the tailnet;
+# run from a tailnet machine or expect them to fail elsewhere. ai.azf.no used
+# to be here too; it moved to meow (hosts/meow/caddy.nix).
 set -u
 caddyfile="$(dirname "$0")/Caddyfile"
 force_ip="${1:-}"

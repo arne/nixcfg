@@ -8,6 +8,7 @@
     ./services.nix
     ./secrets.nix
     ./restic-target.nix
+    ../../modules/services/beszel.nix
   ];
 
   ###########################################################################
@@ -72,7 +73,8 @@
   ## happens at auth time (manual auth): on first bring-up run
   ##   sudo tailscale up --advertise-exit-node
   ## then approve in the admin console, note the NEW tailnet IP, and update
-  ## the two `bind` lines in ./Caddyfile (vault.fismen.no, ai.azf.no).
+  ## the `bind` line in ./Caddyfile (vault.fismen.no — the only one left; the
+  ## other was ai.azf.no, which moved to meow with the rest of the azf.no zone).
   ###########################################################################
   services.tailscale.useRoutingFeatures = "both";
 
