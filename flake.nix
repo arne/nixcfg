@@ -82,7 +82,9 @@
     # no-op (it re-resolves the same tag). To take a new version, edit the tag
     # below, then rebuild. herdr's own `herdr update` detects the /nix/store
     # path and declines to self-replace, telling you to update through Nix.
-    herdr.url = "github:ogulcancelik/herdr/v0.7.5";
+    # Upstream renamed ogulcancelik/herdr -> herdrdev/herdr (GitHub still
+    # redirects the old path; this just tracks the canonical one).
+    herdr.url = "github:herdrdev/herdr/v0.7.5";
     herdr.inputs.nixpkgs.follows = "nixpkgs-unstable";
   };
 

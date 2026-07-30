@@ -252,13 +252,13 @@
       "locked": {
         "lastModified": 1784657072,
         "narHash": "sha256-3BA8eredGku+vsL2Af7sUf43QiArR5XTHNrI+X11vFM=",
-        "owner": "ogulcancelik",
+        "owner": "herdrdev",
         "repo": "herdr",
         "rev": "ef4c23f5775bb8cfec05f05d0844226ff959a07a",
         "type": "github"
       },
       "original": {
-        "owner": "ogulcancelik",
+        "owner": "herdrdev",
         "ref": "v0.7.5",
         "repo": "herdr",
         "type": "github"
