@@ -228,10 +228,3 @@ chat.posta.no {
 	import cf
 }
 
-ai.azf.no {
-	bind 100.102.255.10
-	import cf
-	@notTailnet not remote_ip 100.64.0.0/10 fd7a:115c:a1e0::/48
-	abort @notTailnet
-	reverse_proxy fox.little-lenok.ts.net:8080
-}

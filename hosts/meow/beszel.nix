@@ -34,11 +34,14 @@
   ## every agent's KEY has to be re-issued.
   ##
   ## MANUAL STEPS (the hub itself is deployed and running):
-  ##   1. Add the UniFi DNS record: status.azf.no -> 10.69.68.3
-  ##   2. First visit to https://status.azf.no creates the admin account — do
-  ##      this immediately; until an account exists the signup form is open to
-  ##      anyone who can resolve the name.
-  ##   3. Add one system per host, all with port 45876 and MagicDNS names so
+  ##   1. Point the azf.no zone at meow (see hosts/meow/caddy.nix).
+  ##   2. First visit to https://status.azf.no/_/ creates the PocketBase
+  ##      SUPERUSER — do this immediately; until it exists that setup page is
+  ##      open to anyone who can resolve the name. This account is the admin /
+  ##      break-glass login and is NOT affected by the OIDC switch below.
+  ##   3. Wire up Pocket ID as the app login — see the OIDC PROVIDER block
+  ##      below.
+  ##   4. Add one system per host, all with port 45876 and MagicDNS names so
   ##      nothing breaks when a tailnet IP changes:
   ##
   ##        meow      127.0.0.1   (the hub's own box — no need to go via the tailnet)
@@ -59,8 +62,49 @@
       # Used for the links in alert emails/webhooks — without it they point at
       # localhost and are useless from a phone.
       APP_URL = "https://status.azf.no";
+
+      # AUTH — the ONLY way into the app is Pocket ID at auth.fismen.no (OIDC).
+      #
+      # DISABLE_PASSWORD_AUTH kills email+password login on the `users`
+      # collection (beszel internal/hub/collections.go sets PasswordAuth.Enabled
+      # = false from this). It must be set HERE, not toggled in the PocketBase
+      # UI: beszel re-applies the env value on every start and would clobber a
+      # UI change. NOTE this does NOT touch the PocketBase SUPERUSER login at
+      # https://status.azf.no/_/ — that stays password-based on purpose, as the
+      # break-glass admin door and the only place the OIDC provider is
+      # configured. Guard that account (long password / the built-in OTP MFA).
+      DISABLE_PASSWORD_AUTH = "true";
+      # Provision a `users` record on first successful OIDC login. Without it,
+      # beszel refuses to create accounts and every user must be pre-made by
+      # hand with a matching email — so with password auth off AND this off, a
+      # brand-new hub has no non-superuser way in at all. Acceptable to leave
+      # open here because auth.fismen.no is our own single-tenant IdP: whoever
+      # it lets authenticate is already us.
+      USER_CREATION = "true";
     };
   };
+
+  ###########################################################################
+  ## OIDC PROVIDER — the one part that cannot be declared. The client
+  ## id/secret and issuer live in beszel's PocketBase DB (data.db, encrypted
+  ## with the app key), not in any env var, so this is a one-time UI step:
+  ##
+  ##   1. In Pocket ID (https://auth.fismen.no) register a new OIDC client:
+  ##        name          Beszel
+  ##        callback URL  https://status.azf.no/api/oauth2-redirect
+  ##      Note the generated Client ID and Client Secret.
+  ##   2. Log into https://status.azf.no/_/ as the PocketBase superuser and, at
+  ##      /_/#/settings, turn OFF "Hide collection create and edit controls".
+  ##   3. Edit the `users` collection → Options tab → enable OAuth2 → add an
+  ##      OIDC provider pointed at auth.fismen.no's discovery document
+  ##      (https://auth.fismen.no/.well-known/openid-configuration) with the
+  ##      client id/secret from step 1. Turn the controls toggle back on.
+  ##   4. Sign out and confirm the login page offers ONLY the Pocket ID button
+  ##      (DISABLE_PASSWORD_AUTH above removes the email/password form).
+  ##
+  ## The client secret ends up only in data.db, so it is covered by whatever
+  ## backs that up — there is nothing to add to sops.
+  ###########################################################################
 
   # Caddy vhost for the hub lives in ./caddy.nix, next to ha.azf.no, so all of
   # meow's TLS surface is in one file.
