@@ -21,4 +21,12 @@
   sops.secrets."tailscale-sandbox/oauth-client-secret" = {
     mode = "0400";
   };
+
+  # Env file for oauth2-proxy (hosts/oink/oauth2-proxy.nix): OIDC client
+  # id/secret from the goltenstories Pocket ID instance + the session cookie
+  # secret. Read by systemd (root) as EnvironmentFile, so root:root 0400.
+  sops.secrets."kokosbananas/oauth2-proxy-env" = {
+    mode = "0400";
+    restartUnits = [ "oauth2-proxy.service" ];
+  };
 }

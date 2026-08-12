@@ -179,5 +179,15 @@
           }
         ];
       };
+
+      # services — NixOS container on oink (Incus, 10.100.0.x). Runs Pocket ID
+      # and other services; managed via nixos-rebuild switch --target-host.
+      nixosConfigurations.services = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = { inherit inputs; };
+        modules = [
+          ./hosts/services/configuration.nix
+        ];
+      };
     };
 }

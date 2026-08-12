@@ -3,7 +3,9 @@
 {
   imports = [
     ../../modules/base.nix
+    ./caddy.nix
     ./incus.nix
+    ./oauth2-proxy.nix
     ./secrets.nix
   ];
 
@@ -86,10 +88,11 @@
   # rather than the shared list since this account does not exist elsewhere.
   users.users.oystein = {
     isNormalUser = true;
-    description = "Oystein";
+    description = "Øystein";
     extraGroups = [ "wheel" "incus" ];
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAvxD8FA3gl4XFGhMSwO5885bxLNT0UT/Rj/v+vncRhY oystein@carbon-x1"
+      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDmI5e3HluXuSbQWzUsbIew8SCwQg4QLnSTyA+BTtOxbB54yEV7EM6n4eYry5CMAj4+8I1VoWR9Me7hZn35U3o3hRlTn42ArE8OC4Mfe9qsAl+sLFY6pJ8fLK9Qn9pbrm0rk8fdBn4sfU/cLwiGeLvrTr1pbDL5jEPv1RcssW9I+jCStC3xCtiG7zjv0jDWwGrA3zytuK0wm686FLTeDPhiiqUTgqhUnXNe+Vf3uWzGFLO9HXFGwaLIqr9ELzidYOhm2+QtcF+C7U4mDZP+VIUW6+c3rl1J4esv4eeJ3OV7elmZfber8/4Evh58U/vuO9EybWE5SAN0d3mQ+Y94Dt6+r7Hnlto0mtUKvb+SAddT2HBa5kGVNfrxp3ZNIYVya+vqXuPCfGgXZjYTFdy496/yhbdJMUJYYjBdq6JOO4h6OhMdBET5bg4YW8KUFwpx0UxOpqZYwOrviml/zNElUA8oF7Saaj8jcVx4eZ4KsdLyEcfS15eTHu9WhFx9sRCjy/U= oystein@ryzen7"
     ];
   };
 
@@ -143,22 +146,7 @@
   };
   networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 4533 ];
 
-  ###########################################################################
-  ## Caddy — public reverse proxy / TLS terminator. Fronts the kokosbananas
-  ## project, which runs in its own Incus container (10.100.0.122) and is
-  ## exposed to the host by the container's `web` proxy device (host
-  ## 0.0.0.0:8080 -> 127.0.0.1:8080 inside the container). Caddy gets an
-  ## automatic Let's Encrypt cert for the hostname (DNS A record already points
-  ## at this box's 185.181.63.4) and reverse-proxies cleartext to localhost:8080.
-  ## Ports 80/443 are opened in the firewall block above.
-  ###########################################################################
-  services.caddy = {
-    enable = true;
-    email = "arnefismen@gmail.com";  # ACME account — Let's Encrypt expiry notices.
-    virtualHosts."kokosbananas.tjue.net".extraConfig = ''
-      reverse_proxy localhost:8080
-    '';
-  };
+  # Caddy lives in ./caddy.nix.
 
   # It's a pig, not a fox.
   motd.animal = "piggy";
