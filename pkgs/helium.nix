@@ -29,6 +29,7 @@
 , libXtst
 , libxcb
 , libxkbcommon
+, mesa
 , nspr
 , nss
 , pango
@@ -85,6 +86,7 @@ stdenv.mkDerivation {
     libXtst
     libxcb
     libxkbcommon
+    mesa
     nspr
     nss
     pango
@@ -96,6 +98,11 @@ stdenv.mkDerivation {
   dontBuild = true;
   dontStrip = true;
 
+  autoPatchelfIgnoreMissingDeps = [
+    "libQt5Core.so.5" "libQt5Gui.so.5" "libQt5Widgets.so.5"
+    "libQt6Core.so.6" "libQt6Gui.so.6" "libQt6Widgets.so.6"
+  ];
+
   installPhase = ''
     runHook preInstall
 
@@ -105,6 +112,7 @@ stdenv.mkDerivation {
     mkdir -p $out/bin
     makeWrapper $out/share/helium/helium $out/bin/helium \
       --add-flags "--ozone-platform=wayland" \
+      --add-flags "--password-store=basic" \
       --prefix LD_LIBRARY_PATH : "$out/share/helium"
 
     mkdir -p $out/share/applications
