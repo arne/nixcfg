@@ -10,6 +10,7 @@
     ../../home/claude.nix
     ../../home/helix.nix
     ../../home/yazi.nix
+    ../../home/crush.nix
   ];
 
   home.stateVersion = "25.11";

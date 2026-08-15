@@ -19,6 +19,11 @@
     functions.rebuild = ''
       set -l action $argv
       test (count $argv) -eq 0; and set action switch
+      # Always pull the newest llm-agents (crush et al.) before building. Flake
+      # inputs are pinned in flake.lock, so a plain rebuild would keep whatever
+      # crush version was locked; re-locking just this input every rebuild keeps
+      # it daily-fresh (see home/crush.nix). Leaves flake.lock dirty by design.
+      nix flake update llm-agents --refresh --flake ~/.nixcfg
       switch (uname)
         case Darwin
           sudo darwin-rebuild $action --flake ~/.nixcfg

@@ -8,6 +8,7 @@
   ##   status.azf.no  -> Beszel hub           (./beszel.nix)
   ##   fleet.azf.no   -> fleet status page    (./fleet-web.nix)
   ##   ai.azf.no      -> open-webui on fox    (tailnet-only; moved off fismen)
+  ##   llm.azf.no     -> litellm on pifive    (tailnet-only; off-nix docker)
   ##
   ## WHY A PUBLIC NAME FOR A PRIVATE SERVICE: `.internal` can never have a
   ## publicly-trusted certificate (that is the point of a reserved TLS-less
@@ -113,6 +114,38 @@
       @notTailnet not remote_ip 100.64.0.0/10 fd7a:115c:a1e0::/48
       abort @notTailnet
       reverse_proxy fox.little-lenok.ts.net:8080
+    '';
+
+    # llm.azf.no — LiteLLM proxy (OpenAI-compatible gateway + admin UI). Runs
+    # OFF-NIX: a dockge-managed compose stack (litellm-database image + Postgres)
+    # on pifive, our container host. LiteLLM's DB features (virtual keys, budgets,
+    # the admin UI, SSO) need Prisma, and prisma-client-py pins a 5.17.0 engine
+    # that nixpkgs' prisma-engines (6.18) can't satisfy — so the upstream image,
+    # which bundles a matched prisma, is the sane path. This vhost is the only
+    # piece that lives in Nix.
+    #
+    # LAN + TAILNET ONLY. Like ai.azf.no this refuses anything off our own
+    # networks, but with one difference: the home LAN (10.69.68.0/24) is
+    # allowed too. llm.azf.no resolves via the *.azf.no wildcard to 10.69.68.3
+    # (meow's LAN IP), so a LAN client (e.g. the Mac) connects DIRECTLY over the
+    # LAN and arrives with a 10.69.68.x source — never a tailnet 100.x, even
+    # with Tailscale running, because same-subnet traffic skips the tunnel. A
+    # bare tailnet guard would `abort` it ("network connection was lost" in
+    # Safari). 10.69.68.0/24 is the subnet meow advertises to the tailnet, so
+    # remote tailnet clients still reach it through the subnet router (100.x
+    # source). Nothing in azf.no is publicly routable, so this exposes nothing
+    # new. LiteLLM's own master-key / virtual-key auth is the second layer; the
+    # admin UI adds Pocket ID OIDC (auth.fismen.no) on top.
+    #
+    # pifive must be on the little-lenok tailnet for this name to resolve here
+    # and for LiteLLM to reach fox's llama-swap. 4000 is LiteLLM's default port.
+    virtualHosts."llm.azf.no".extraConfig = ''
+      tls {
+        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+      }
+      @notLocal not remote_ip 100.64.0.0/10 fd7a:115c:a1e0::/48 10.69.68.0/24
+      abort @notLocal
+      reverse_proxy pifive.little-lenok.ts.net:4000
     '';
   };
 

@@ -203,6 +203,7 @@
             home-manager.useUserPackages = true;
             home-manager.backupFileExtension = "hm-bak";
             home-manager.sharedModules = [ nix-index-database.homeModules.nix-index ];
+            home-manager.extraSpecialArgs = { inherit llm-agents; };  # crush (home/crush.nix)
             home-manager.users.arne = import ./hosts/meow/home.nix;
           }
         ];
