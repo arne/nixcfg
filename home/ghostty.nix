@@ -41,6 +41,11 @@ in
       window-padding-x = 12;
       window-padding-y = 12;
       background-opacity = 0.95;
+
+      # Ctrl+V pastes, in addition to ghostty's default Ctrl+Shift+V. Ctrl+V is
+      # also the terminal literal-next control code, so this shadows that; the
+      # Shift variant stays as the conflict-free fallback.
+      keybind = [ "ctrl+v=paste_from_clipboard" ];
     };
 
     themes = {

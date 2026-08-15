@@ -26,9 +26,13 @@
   # cache.numtide.com — prebuilt llm-agents.nix (pi, claude-code, codex, …),
   # rebuilt daily. Shared by every host (extra-substituters merges, so hosts
   # can add their own caches on top).
-  nix.settings.extra-substituters = [ "https://cache.numtide.com" ];
+  nix.settings.extra-substituters = [
+    "https://cache.numtide.com"
+    "https://arne.cachix.org"
+  ];
   nix.settings.extra-trusted-public-keys = [
     "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
+    "arne.cachix.org-1:bGq9/7z61O/TYaJxkCpU2Kv2buYhTwpTvbER0MzNIJ8="
   ];
 
   environment.systemPackages = with pkgs; [

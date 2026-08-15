@@ -72,9 +72,10 @@
     pciutils
     usbutils
     btrfs-progs
+    (callPackage ../pkgs/helium.nix { })
   ];
 
-  environment.sessionVariables.BROWSER = "firefox";
+  environment.sessionVariables.BROWSER = "helium";
   environment.sessionVariables.TERMINAL = "ghostty";
 
   # Prebuilt niri from its cachix (its check-phase EGL test aborts in the build
