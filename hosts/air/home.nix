@@ -12,6 +12,7 @@
     ../../home/appearance.nix
     ../../home/yazi.nix
     ../../home/pi.nix
+    ../../home/crush.nix
     ../../home/hyprpaper.nix
     ../../home/hypridle.nix
     ../../home/hyprlock.nix
