@@ -8,6 +8,7 @@
     ../../home/claude.nix
     ../../home/ghostty.nix
     ../../home/helix.nix
+    ../../home/firefox.nix
     ../../home/appearance.nix
     ../../home/yazi.nix
     ../../home/pi.nix
