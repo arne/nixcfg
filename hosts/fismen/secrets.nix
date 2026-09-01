@@ -14,11 +14,12 @@
   ##   cd <repo> && export SOPS_AGE_KEY="$(ssh-to-age -private-key -i ~/.ssh/id_ed25519)"
   ##   sops set secrets/fismen.yaml '["caddy"]["cloudflare-env"]' '"CLOUDFLARE_API_TOKEN=<token>"'
   ##   sops set secrets/fismen.yaml '["nyheter"]["oidc-env"]'     '"OIDC_CLIENT_ID=...\nOIDC_CLIENT_SECRET=..."'
+  ##   sops set secrets/fismen.yaml '["navidrome"]["env"]'       "\"ND_PASSWORDENCRYPTIONKEY=$(openssl rand -hex 32)\""
   ## (values: see the live units captured in MIGRATION.md / the old host's
   ##  /etc/caddy/secrets/cloudflare-token)
   ##
   ## The consuming units use tolerant `-/run/secrets/<key>` EnvironmentFile
-  ## paths (caddy.nix, services.nix), which is exactly where sops-nix places
+  ## paths (caddy.nix, services.nix, navidrome.nix), which is exactly where sops-nix places
   ## these keys — arming the wiring requires no other changes.
   ###########################################################################
 
@@ -27,6 +28,7 @@
 
   sops.secrets."caddy/cloudflare-env" = { mode = "0400"; };
   sops.secrets."nyheter/oidc-env"     = { mode = "0400"; };
+  sops.secrets."navidrome/env"        = { mode = "0400"; };
 
   # beszel/agent-env is deliberately NOT declared any more: the agent moved to
   # the shared module (../../modules/services/beszel.nix) and its new hub

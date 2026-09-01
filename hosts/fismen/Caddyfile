@@ -76,6 +76,10 @@ keys.fismen.no {
 	reverse_proxy 10.228.107.29:8080
 }
 
+music.fismen.no {
+	reverse_proxy 127.0.0.1:4533
+}
+
 monitor.fismen.no {
 	reverse_proxy 10.228.107.118:8090
 }
