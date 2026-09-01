@@ -26,12 +26,23 @@
       Port = 4533;
       MusicFolder = "/srv/music";
 
-      # The unit runs under RootDirectory=/run/navidrome with only storeDir
-      # and /etc bind-mounted read-only, so an unqualified `ffmpeg` lookup on
-      # $PATH finds nothing and on-the-fly transcoding fails at playback time
-      # rather than at start. Pin the store path — it is inside the storeDir
-      # bind, so it resolves inside the sandbox.
-      FFmpegPath = lib.getExe pkgs.ffmpeg;
+      # Public share links (Sharing menu in the web UI). Anyone holding a
+      # share URL can stream that content without an account — that is the
+      # point of the feature, but it is the one unauthenticated path into
+      # this server. Links expire after DefaultShareExpiration (1 year).
+      EnableSharing = true;
+
+      # Codec used when a client asks for a reduced bitrate without naming a
+      # format (upstream default is "opus"). Every Subsonic client can play
+      # mp3; opus support is patchier on older ones.
+      #
+      # NOTE: this sets the FORMAT, not the rate. The 256 kbps figure lives in
+      # the `transcoding` table (the seeded "mp3 audio" profile ships 192),
+      # which is app state, not config — see core/stream/decider.go:164,
+      # `maxBitRate := trc.DefaultBitRate`. It is bumped to 256 in the DB;
+      # EnableTranscodingConfig stays false so the UI cannot edit transcoding
+      # commands, which are shell strings run by the server.
+      DefaultDownsamplingFormat = "mp3";
 
       # Built-in DB backups. Users, playlists, ratings and play counts live in
       # navidrome.db and are NOT re-derivable from the audio files. This is
