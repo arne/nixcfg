@@ -6,6 +6,7 @@
     ./incus.nix
     ./caddy.nix
     ./services.nix
+    ./navidrome.nix
     ./secrets.nix
     ./restic-target.nix
     ../../modules/services/beszel.nix
