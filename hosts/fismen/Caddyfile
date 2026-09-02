@@ -77,7 +77,7 @@ keys.fismen.no {
 }
 
 music.fismen.no {
-	reverse_proxy 127.0.0.1:4533
+	reverse_proxy 127.0.0.1:4747
 }
 
 monitor.fismen.no {
