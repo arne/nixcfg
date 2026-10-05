@@ -72,6 +72,15 @@ files.fismen.no {
 	reverse_proxy 10.228.107.67:8080
 }
 
+flokk.fismen.no {
+	# Server-Sent Events must not be buffered, or a list update waits for the
+	# buffer to fill instead of arriving.
+	reverse_proxy 10.228.107.80:8080 {
+		flush_interval -1
+	}
+	encode zstd gzip
+}
+
 keys.fismen.no {
 	reverse_proxy 10.228.107.29:8080
 }
