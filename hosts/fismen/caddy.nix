@@ -77,7 +77,7 @@
 
   # Static-site vhosts serve from /var/www/<site> — migrate those trees over
   # and make sure the caddy user can read them.
-  # (bases, lageriet, nytta, chess, totalfrihet, themebases, arne, tjue)
+  # (bases, lageriet, nytta, chess, skole, totalfrihet, themebases, arne, tjue)
 
   networking.firewall.allowedTCPPorts = [ 80 443 ];
   # HTTP/3

@@ -183,6 +183,25 @@ chess.fismen.no {
 	file_server
 }
 
+skole.fismen.no {
+	root * /var/www/skole
+	file_server
+	encode zstd gzip
+	# Access logging. Caddy creates and rolls the file itself (100MiB, 10 kept,
+	# 90 days) as the caddy user — never pre-create it as root, or caddy fails
+	# to open it and the whole config refuses to load.
+	log {
+		output file /var/log/caddy/access-skole.fismen.no.log
+	}
+}
+
+# Common misspelling (nynorsk 'skule') — folds into the canonical host.
+# Covered by the *.fismen.no wildcard A record, so it gets its own
+# HTTP-01 cert on first hit; no DNS change needed.
+skule.fismen.no {
+	redir https://skole.fismen.no{uri} permanent
+}
+
 preview.tjue.net {
 	reverse_proxy 10.228.107.74:8080
 	encode zstd gzip
