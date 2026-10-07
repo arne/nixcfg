@@ -269,3 +269,31 @@ chat.posta.no {
 	import cf
 }
 
+
+# NetBird control plane (./netbird.nix). One public name carries three things:
+# the static dashboard, the Management HTTP API + gRPC, and the Signal gRPC
+# service. The gRPC backends speak h2c (cleartext HTTP/2) on loopback, so they
+# need an explicit h2c:// transport — a plain reverse_proxy would downgrade to
+# HTTP/1.1 and peers would fail to connect.
+#
+# NOT behind the (cf) snippet, unlike the other fismen.no vhosts here: this
+# name resolves publicly to this host via the *.fismen.no wildcard and the zone
+# is not proxied, so Caddy can take an HTTP-01/TLS-ALPN cert without touching
+# DNS. azf.no stays internal-only — only the peer DNS suffix (nb.azf.no) uses
+# it, and that name never leaves the overlay.
+nb.fismen.no {
+	# Management gRPC (peer <-> control plane).
+	reverse_proxy /management.ManagementService/* h2c://127.0.0.1:8011
+
+	# Signal gRPC (peer <-> peer handshake brokering).
+	reverse_proxy /signalexchange.SignalExchange/* h2c://127.0.0.1:10000
+
+	# Management HTTP API, used by the dashboard and `netbird` CLI tokens.
+	reverse_proxy /api/* 127.0.0.1:8011
+
+	# Everything else is the static dashboard build.
+	root * /etc/netbird-dashboard
+	try_files {path} /index.html
+	file_server
+	encode zstd gzip
+}

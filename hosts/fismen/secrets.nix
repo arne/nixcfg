@@ -28,6 +28,17 @@
   sops.secrets."caddy/cloudflare-env" = { mode = "0400"; };
   sops.secrets."nyheter/oidc-env"     = { mode = "0400"; };
 
+  # NetBird control plane (./netbird.nix). Both are read by root-run units
+  # through the module's replace-secret pre-start, so no owner override.
+  #   sops set secrets/fismen.yaml '["netbird"]["datastore-key"]'  '"<32+ random bytes>"'
+  #   sops set secrets/fismen.yaml '["netbird"]["turn-password"]'  '"<random>"'
+  #   sops set secrets/fismen.yaml '["netbird"]["turn-secret"]'    '"<random>"'
+  # datastore-key encrypts the peer store at rest: BACK IT UP. Losing it means
+  # re-enrolling every peer, and it must stay identical across restores.
+  sops.secrets."netbird/datastore-key"  = { mode = "0400"; };
+  sops.secrets."netbird/turn-password"  = { mode = "0400"; };
+  sops.secrets."netbird/turn-secret"    = { mode = "0400"; };
+
   # navidrome/env is gone with navidrome itself (replaced by gonic, which has
   # no equivalent key: it stores credentials in its own DB). The stale value is
   # still encrypted in secrets/fismen.yaml — prune it alongside beszel's below.
