@@ -39,6 +39,12 @@
   sops.secrets."netbird/turn-password"  = { mode = "0400"; };
   sops.secrets."netbird/turn-secret"    = { mode = "0400"; };
 
+  # The Pocket ID client secret for the `netbird` OIDC client. Management hands
+  # it to enrolled peers for the PKCE token exchange; it is NOT the dashboard's
+  # public AUTH_CLIENT_SECRET.
+  #   sops set secrets/fismen.yaml '["netbird"]["oidc-client-secret"]' '"<secret>"'
+  sops.secrets."netbird/oidc-client-secret" = { mode = "0400"; };
+
   # navidrome/env is gone with navidrome itself (replaced by gonic, which has
   # no equivalent key: it stores credentials in its own DB). The stale value is
   # still encrypted in secrets/fismen.yaml — prune it alongside beszel's below.
