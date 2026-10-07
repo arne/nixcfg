@@ -7,6 +7,7 @@
     ./caddy.nix
     ./services.nix
     ./gonic.nix
+    ./netbird.nix
     ./secrets.nix
     ./restic-target.nix
     ../../modules/services/beszel.nix
