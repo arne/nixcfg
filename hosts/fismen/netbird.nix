@@ -135,8 +135,10 @@ in
 
         # Management sits behind Caddy on loopback, so trust the proxy for
         # client-IP attribution instead of the module's 0.0.0.0/0 default.
+        # CIDR prefixes, not bare addresses: management parses these with
+        # netip.ParsePrefix and refuses to start on "127.0.0.1" ("no '/'").
         ReverseProxy = {
-          TrustedHTTPProxies = [ "127.0.0.1" "::1" ];
+          TrustedHTTPProxies = [ "127.0.0.1/32" "::1/128" ];
           TrustedHTTPProxiesCount = 1;
         };
 
