@@ -1,7 +1,7 @@
 { ... }:
 
 {
-  # Shared CLI tooling for every host (imported by both fox and oink home.nix).
+  # Shared CLI tooling for every host (imported by each host's home.nix).
   # fish/helix/yazi live in their own modules; this is the smaller stuff that
   # mostly just wants `enable = true` plus shell integration. Fish is HM-managed
   # (see ./fish.nix), so each program's fish hooks wire themselves in.
