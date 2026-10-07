@@ -1,5 +1,12 @@
 { config, lib, ... }:
 
+let
+  # The `netbird` OIDC client registered in Pocket ID. Not a secret: it travels
+  # in every authorization URL and is baked into the public dashboard build.
+  # NetBird validates the JWT `aud` claim against it, so the audience fields
+  # below must carry the client ID, not the literal string "netbird".
+  clientId = "dd7245f0-4e66-4197-98bd-641ce2ba25bd";
+in
 {
   ###########################################################################
   ## NetBird control plane (Phase 1 of the Tailscale -> NetBird migration).
@@ -36,12 +43,11 @@
   ## headless `netbird up`, PKCE for the dashboard and desktop clients.
   ##
   ## MANUAL PREREQUISITES:
-  ##   1. Pocket ID (https://auth.fismen.no): register an OIDC client named
-  ##      `netbird`, public/PKCE enabled, device code enabled, with callback
-  ##      URLs https://nb.fismen.no/auth, https://nb.fismen.no/silent-auth and
-  ##      http://localhost:53000. REQUIRED — no login works without it.
-  ##   2. Two secrets into secrets/fismen.yaml (see ./secrets.nix for the
-  ##      sops invocation); activation fails until they exist:
+  ##   1. DONE: the `netbird` OIDC client is registered in Pocket ID as
+  ##      dd7245f0-4e66-4197-98bd-641ce2ba25bd (see `clientId` below), with
+  ##      callbacks https://nb.fismen.no/auth, /silent-auth and
+  ##      http://localhost:53000.
+  ##   2. DONE: the secrets below are in secrets/fismen.yaml:
   ##        netbird/datastore-key   32+ random bytes. NOT optional — the module
   ##                                default is the literal "very-insecure-key"
   ##                                and it encrypts the peer store at rest.
@@ -51,6 +57,7 @@
   ##        netbird/turn-password   random; coturn's shared password.
 ##        netbird/turn-secret     random; shared secret for time-limited TURN
 ##                                credentials (module default is a placeholder).
+##        netbird/oidc-client-secret  the Pocket ID client secret.
 ##   3. OPTIONAL, recommended: an explicit AAAA 2a01:4f9:4b:2141::2 for
 ##      nb.fismen.no. No DNS change is needed to get started — the
 ##      `*.fismen.no` wildcard already answers with this host's v4 — but the
@@ -85,17 +92,17 @@
         };
 
         HttpConfig = {
-          # Must match the Pocket ID client ID; issuer and JWKS are discovered
-          # from oidcConfigEndpoint above.
-          AuthAudience = "netbird";
+          # Issuer and JWKS are discovered from oidcConfigEndpoint above; the
+          # audience has to be asserted here.
+          AuthAudience = clientId;
         };
 
         # Headless login (`netbird up` over SSH, no browser on the box).
         DeviceAuthorizationFlow = {
           Provider = "hosted";
           ProviderConfig = {
-            Audience = "netbird";
-            ClientID = "netbird";
+            Audience = clientId;
+            ClientID = clientId;
             Domain = "auth.fismen.no";
             TokenEndpoint = "https://auth.fismen.no/api/oidc/token";
             DeviceAuthEndpoint = "https://auth.fismen.no/api/oidc/device/authorize";
@@ -106,8 +113,19 @@
 
         # Browser login (dashboard, desktop + mobile clients).
         PKCEAuthorizationFlow.ProviderConfig = {
-          Audience = "netbird";
-          ClientID = "netbird";
+          Audience = clientId;
+          ClientID = clientId;
+
+          # Pocket ID issued this client a secret, so the token exchange is
+          # confidential and the secret has to be present. It is handed to
+          # enrolled peers by management over TLS — NOT the same thing as the
+          # dashboard's AUTH_CLIENT_SECRET, which is baked into public static
+          # JS. If the dashboard login ever needs a secret, mark the client
+          # PUBLIC in Pocket ID instead of pasting it there.
+          ClientSecret = {
+            _secret = config.sops.secrets."netbird/oidc-client-secret".path;
+          };
+
           AuthorizationEndpoint = "https://auth.fismen.no/authorize";
           TokenEndpoint = "https://auth.fismen.no/api/oidc/token";
           Scope = "openid profile email";
@@ -151,8 +169,8 @@
 
     dashboard.settings = {
       AUTH_AUTHORITY = "https://auth.fismen.no";
-      AUTH_AUDIENCE = "netbird";
-      AUTH_CLIENT_ID = "netbird";
+      AUTH_AUDIENCE = clientId;
+      AUTH_CLIENT_ID = clientId;
       AUTH_SUPPORTED_SCOPES = "openid profile email groups";
       AUTH_REDIRECT_URI = "https://nb.fismen.no/auth";
       AUTH_SILENT_REDIRECT_URI = "https://nb.fismen.no/silent-auth";
