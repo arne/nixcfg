@@ -81,6 +81,15 @@ flokk.fismen.no {
 	encode zstd gzip
 }
 
+# Pull request previews, one per PR, routed inside the flokk-preview container.
+*.flokk.fismen.no {
+	reverse_proxy 10.228.107.81:80 {
+		flush_interval -1
+	}
+	encode zstd gzip
+	import cf
+}
+
 keys.fismen.no {
 	reverse_proxy 10.228.107.29:8080
 }
