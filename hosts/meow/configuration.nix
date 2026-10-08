@@ -10,6 +10,7 @@
     ./beszel.nix
     ./fleet-web.nix
     ../../modules/services/beszel.nix
+    ../../modules/netbird.nix
   ];
 
   ###########################################################################
