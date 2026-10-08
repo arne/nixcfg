@@ -204,8 +204,14 @@ in
   ## Pointing at the self-hosted control plane is declarative: ManagementURL
   ## and AdminURL are real config.json fields, and the module merges whatever
   ## is set here into /var/lib/netbird/config.json on every start via
-  ## /etc/netbird/config.d/50-nixos.json. The ":443" is not cosmetic — that is
-  ## the shape netbird writes itself (cf. its default https://api.netbird.io:443).
+  ## /etc/netbird/config.d/50-nixos.json.
+  ##
+  ## Both are Go `url.URL` STRUCTS, not strings — a string here makes the
+  ## daemon exit at startup with "cannot unmarshal string into Go struct field
+  ## Config.AdminURL of type url.URL" and crash-loop. Scheme and Host are the
+  ## only fields worth writing; the daemon fills in the other nine itself and
+  ## persists them back. The ":443" is likewise not cosmetic — it is the shape
+  ## netbird writes itself (cf. its default https://api.netbird.io:443).
   ##
   ## Login is a ONE-TIME manual step, by design:
   ##   sudo netbird up
@@ -231,10 +237,17 @@ in
   services.netbird = {
     enable = true;
 
-    clients.default.config = {
-      ManagementURL = "https://nb.fismen.no:443";
-      AdminURL = "https://nb.fismen.no:443";
-    };
+    clients.default.config =
+      let
+        controlPlane = {
+          Scheme = "https";
+          Host = "nb.fismen.no:443";
+        };
+      in
+      {
+        ManagementURL = controlPlane;
+        AdminURL = controlPlane;
+      };
   };
 
   # The dashboard is a static build; ./Caddyfile serves it from this path and
