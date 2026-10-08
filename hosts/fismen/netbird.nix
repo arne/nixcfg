@@ -191,6 +191,52 @@ in
     };
   };
 
+  ###########################################################################
+  ## NetBird client (Phase 2) — fismen joins the overlay it hosts.
+  ##
+  ## `enable = true` is the module's backward-compatible shorthand for a
+  ## single client named "netbird": interface wt0, UDP 51820, running as root
+  ## rather than hardened. Root is deliberate here — it keeps the CLI plainly
+  ## `netbird` and the unit plainly `netbird.service` (a hardened
+  ## `clients.<name>` would rename both to `netbird-<name>` and need the
+  ## module's polkit rule to talk to resolved).
+  ##
+  ## Pointing at the self-hosted control plane is declarative: ManagementURL
+  ## and AdminURL are real config.json fields, and the module merges whatever
+  ## is set here into /var/lib/netbird/config.json on every start via
+  ## /etc/netbird/config.d/50-nixos.json. The ":443" is not cosmetic — that is
+  ## the shape netbird writes itself (cf. its default https://api.netbird.io:443).
+  ##
+  ## Login is a ONE-TIME manual step, by design:
+  ##   sudo netbird up
+  ## prints a URL + code to complete in a browser against auth.fismen.no
+  ## (management's DeviceAuthorizationFlow, configured above). The result is
+  ## persisted in /var/lib/netbird/state.json, so reboots and rebuilds do not
+  ## repeat it.
+  ##
+  ## `login.enable` with a setup key is NOT used, and would not work on
+  ## netbird 0.60.2 if it were: the module's login unit passes the key as
+  ## NB_SETUP_KEY_FILE, and that variable does not exist in this client
+  ## version (it reads a key only from `--setup-key`/`--setup-key-file`).
+  ##
+  ## Tailscale keeps working alongside this. It is not a conflict despite both
+  ## overlays allocating out of 100.64.0.0/10: tailscaled installs one /32 per
+  ## peer in routing table 52 (consulted at rule priority 5270, ahead of
+  ## `main`), so tailnet peers still win on their own addresses and everything
+  ## else in the range falls through to wt0. DNS likewise splits cleanly —
+  ## resolved holds a search domain per link, little-lenok.ts.net on
+  ## tailscale0 and nb.azf.no on wt0.
+  ###########################################################################
+
+  services.netbird = {
+    enable = true;
+
+    clients.default.config = {
+      ManagementURL = "https://nb.fismen.no:443";
+      AdminURL = "https://nb.fismen.no:443";
+    };
+  };
+
   # The dashboard is a static build; ./Caddyfile serves it from this path and
   # proxies the API/gRPC routes past it. Exported so the Caddyfile and the
   # package stay in lockstep across rebuilds.
