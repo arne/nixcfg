@@ -45,8 +45,8 @@ in
   ## MANUAL PREREQUISITES:
   ##   1. DONE: the `netbird` OIDC client is registered in Pocket ID as
   ##      dd7245f0-4e66-4197-98bd-641ce2ba25bd (see `clientId` below), with
-  ##      callbacks https://nb.fismen.no/auth, /silent-auth and
-  ##      http://localhost:53000.
+  ##      callbacks https://nb.fismen.no/auth, https://nb.fismen.no/silent-auth
+  ##      (the dashboard) and http://localhost:53000 (the CLI/PKCE flow).
   ##   2. DONE: the secrets below are in secrets/fismen.yaml:
   ##        netbird/datastore-key   32+ random bytes. NOT optional — the module
   ##                                default is the literal "very-insecure-key"
@@ -171,8 +171,12 @@ in
       AUTH_AUDIENCE = clientId;
       AUTH_CLIENT_ID = clientId;
       AUTH_SUPPORTED_SCOPES = "openid profile email groups";
-      AUTH_REDIRECT_URI = "https://nb.fismen.no/auth";
-      AUTH_SILENT_REDIRECT_URI = "https://nb.fismen.no/silent-auth";
+      # PATHS, not absolute URLs: the dashboard prepends its own origin when it
+      # builds the authorization request. Full URLs here produced a redirect_uri
+      # of "https://nb.fismen.nohttps://nb.fismen.no/auth" and Pocket ID
+      # rejected it as an invalid callback.
+      AUTH_REDIRECT_URI = "/auth";
+      AUTH_SILENT_REDIRECT_URI = "/silent-auth";
       NETBIRD_TOKEN_SOURCE = "idToken";
       USE_AUTH0 = false;
     };
