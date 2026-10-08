@@ -39,12 +39,22 @@
   ## NB_SETUP_KEY_FILE, and that variable does not exist in this version,
   ## which reads a key only from `--setup-key`/`--setup-key-file`.
   ##
-  ## Running both overlays at once is safe despite both allocating out of
-  ## 100.64.0.0/10. NetBird hands out a /16 (fismen got 100.117.77.242/16) and
-  ## tailscaled installs one /32 per peer in routing table 52, consulted at
-  ## rule priority 5270 ahead of `main` — so tailnet peers keep winning on
-  ## their own addresses. DNS splits per-link in resolved: little-lenok.ts.net
-  ## on tailscale0, nb.azf.no on wt0.
+  ## Running both overlays at once works only because the NetBird network
+  ## lives in 10.10.0.0/16 (dashboard, Settings -> Networks), OUTSIDE
+  ## Tailscale's 100.64.0.0/10. NetBird's default range is inside it, and that
+  ## breaks every host that runs both: tailscaled's ts-input chain drops any
+  ## 100.64.0.0/10 source that did not arrive on tailscale0, and a query to
+  ## NetBird's DNS forwarder on the wt0 address loops back over lo with the
+  ## wt0 address as its source. Where NetBird owns resolv.conf (fox, via
+  ## openresolv) every lookup timed out and installing NetBird looked like
+  ## losing the internet. Do not move the range back into 100.64.0.0/10;
+  ## 100.100.0.0/16 additionally swallows Tailscale's 100.100.100.100. After a
+  ## range change a client keeps its old address until
+  ## `systemctl restart netbird` — fismen did, and every peer that dialled it
+  ## failed until it was restarted.
+  ##
+  ## DNS splits per-link in resolved: little-lenok.ts.net on tailscale0,
+  ## nb.azf.no on wt0.
   ###########################################################################
   services.netbird = {
     enable = true;
