@@ -63,10 +63,11 @@
     linkConfig.RequiredForOnline = "routable";
   };
 
-  # 22 only here — caddy.nix opens 80/443(+udp), modules/services/bbs.nix
-  # opens 2222.
+  # 22 + 2323 here — caddy.nix opens 80/443(+udp), modules/services/bbs.nix
+  # opens 2222. 2323 is muddy, the SSH MUD: it runs as a systemd --user
+  # service from ~/muddy (deployed by ~/source/muddy/deploy.sh), hence linger.
   networking.firewall.enable = true;
-  networking.firewall.allowedTCPPorts = [ 22 ];
+  networking.firewall.allowedTCPPorts = [ 22 2323 ];
 
   ###########################################################################
   ## Tailscale — base.nix enables the service; fismen offers an exit node
@@ -98,6 +99,8 @@
     description = "Arne Skaar Fismen";
     extraGroups = [ "wheel" "incus-admin" ];
     shell = pkgs.fish;
+    # Start user services (muddy) at boot, not at first login.
+    linger = true;
   };
   security.sudo.wheelNeedsPassword = false;
 

@@ -57,6 +57,8 @@ Pin every instance on copy with the addresses below.
 | coffee | 10.228.107.111 | |
 | comet | 10.228.107.218 | tun device (tailscale inside, 100.78.135.48) |
 | filebrowser | 10.228.107.67 | disk: /srv/media → /media (4 KB — near-empty) |
+| flokk | 10.228.107.80 | tun device (tailscale inside); flokk.fismen.no |
+| flokk-preview | 10.228.107.81 | woodpecker agent (local backend); *.flokk.fismen.no PR previews |
 | gatus | 10.228.107.102 | |
 | glance | 10.228.107.196 | fismen.no frontpage |
 | keys | 10.228.107.29 | |
