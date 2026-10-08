@@ -47,6 +47,7 @@ in
   ##      dd7245f0-4e66-4197-98bd-641ce2ba25bd (see `clientId` below), with
   ##      callbacks https://nb.fismen.no/auth, https://nb.fismen.no/silent-auth
   ##      (the dashboard) and http://localhost:53000 (the CLI/PKCE flow).
+  ##      It MUST be a PUBLIC client — see PKCEAuthorizationFlow below.
   ##   2. DONE: the secrets below are in secrets/fismen.yaml:
   ##        netbird/datastore-key   32+ random bytes. NOT optional — the module
   ##                                default is the literal "very-insecure-key"
@@ -57,7 +58,6 @@ in
   ##        netbird/turn-password   random; coturn's shared password.
 ##        netbird/turn-secret     random; shared secret for time-limited TURN
 ##                                credentials (module default is a placeholder).
-##        netbird/oidc-client-secret  the Pocket ID client secret.
 ##   3. OPTIONAL, recommended: an explicit AAAA 2a01:4f9:4b:2141::2 for
 ##      nb.fismen.no. No DNS change is needed to get started — the
 ##      `*.fismen.no` wildcard already answers with this host's v4 — but the
@@ -116,15 +116,14 @@ in
           Audience = clientId;
           ClientID = clientId;
 
-          # Pocket ID issued this client a secret, so the token exchange is
-          # confidential and the secret has to be present. It is handed to
-          # enrolled peers by management over TLS — NOT the same thing as the
-          # dashboard's AUTH_CLIENT_SECRET, which is baked into public static
-          # JS. If the dashboard login ever needs a secret, mark the client
-          # PUBLIC in Pocket ID instead of pasting it there.
-          ClientSecret = {
-            _secret = config.sops.secrets."netbird/oidc-client-secret".path;
-          };
+          # NO ClientSecret, deliberately. The `netbird` client in Pocket ID is
+          # a PUBLIC client: PKCE proves possession, so no secret is needed and
+          # none can be kept safely anyway — the dashboard's half of the same
+          # flow is static JS served to anyone who loads the page. While the
+          # client was confidential the CLI worked (management handed it the
+          # secret) but the dashboard could not, failing at the token endpoint
+          # with "client id or secret not provided". Both halves are secretless
+          # now, which is the only configuration that works for both.
 
           AuthorizationEndpoint = "https://auth.fismen.no/authorize";
           TokenEndpoint = "https://auth.fismen.no/api/oidc/token";
