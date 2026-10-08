@@ -47,7 +47,6 @@
   ##        meow      127.0.0.1   (the hub's own box — no need to go via the tailnet)
   ##        fox       fox
   ##        fismen    fismen
-  ##        oink      oink
   ##        roar      roar
   ##
   ##      The system list lives in the hub's DB, not here: beszel has no

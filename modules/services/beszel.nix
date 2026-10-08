@@ -30,7 +30,7 @@ in
   ###########################################################################
   ## Beszel agent — the per-host metrics collector (CPU / memory / disk /
   ## network / temperatures, and container stats where there is a Docker or
-  ## Podman socket). Imported by fox, fismen, oink, roar and meow; NOT by air,
+  ## Podman socket). Imported by fox, fismen, roar and meow; NOT by air,
   ## which is a laptop that is asleep more often than not and would just sit
   ## in the hub's UI showing as down.
   ##
@@ -44,7 +44,7 @@ in
   ##
   ## The agent listens on 0.0.0.0:45876 but the port is opened ONLY on
   ## tailscale0, so it is unreachable from the LAN and from the public WAN
-  ## (this matters for fismen and oink, which have public addresses). Note
+  ## (this matters for fismen, which has a public address). Note
   ## the module's own `openFirewall` is deliberately left off: it would open
   ## the port on every interface.
   ###########################################################################

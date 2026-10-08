@@ -2,7 +2,7 @@
 
 {
   # Headless home box — CLI modules only (no GUI: appearance / ghostty /
-  # firefox / niri intentionally excluded, same shape as meow/oink).
+  # firefox / niri intentionally excluded, same shape as meow).
   imports = [
     ../../home/fish.nix
     ../../home/cli.nix

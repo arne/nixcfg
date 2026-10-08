@@ -41,15 +41,15 @@
     # cache.numtide.com — don't `follows = nixpkgs` or every cache hit dies.
     llm-agents.url = "github:numtide/llm-agents.nix";
 
-    # Declarative disk partitioning for the oink server host.
+    # Declarative disk partitioning for the server hosts (fismen, meow, roar).
     disko = {
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Secrets management (sops + age). Used on oink to ship the sandbox
-    # tailnet's auth material encrypted in-repo; decrypted at activation with
-    # oink's SSH host key. See secrets/ and hosts/oink/secrets.nix.
+    # Secrets management (sops + age). Ships service credentials encrypted
+    # in-repo, decrypted at activation with each host's SSH host key. See
+    # secrets/ and hosts/<host>/secrets.nix.
     sops-nix = {
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -62,15 +62,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # The firsthouse sandbox-portal system (Phase 6) — the Go portal app, the
-    # Incus/LXC sandbox guest image, and the NixOS service module all live in
-    # its own repo now. Public repo on code.bas.es, fetched over plain HTTPS (no
-    # credentials needed, like launcher). Its nixpkgs follows ours; its own
-    # llm-agents + nixos-generators stay pinned upstream (cache hits / image builder).
-    firsthouse = {
-      url = "git+https://code.bas.es/arne/firsthouse";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
 
     # herdr — terminal workspace manager / agent multiplexer. Installed on every
     # host via modules/base.nix. Upstream is a Rust flake that builds against
@@ -88,7 +79,7 @@
     herdr.inputs.nixpkgs.follows = "nixpkgs-unstable";
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, niri, apple-silicon, launcher, llm-agents, disko, sops-nix, nix-index-database, firsthouse, herdr, ... }:
+  outputs = inputs@{ self, nixpkgs, home-manager, niri, apple-silicon, launcher, llm-agents, disko, sops-nix, nix-index-database, herdr, ... }:
     {
       nixosConfigurations.fox = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
@@ -158,30 +149,6 @@
         ];
       };
 
-      # oink — headless server (gigahost.no). No desktop/niri machinery; disko
-      # owns partitioning (ZFS rpool mirrored across two SSDs, tank data pool
-      # on the 8 TB HDD).
-      nixosConfigurations.oink = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        specialArgs = { inherit inputs; };
-        modules = [
-          disko.nixosModules.disko
-          sops-nix.nixosModules.sops
-          firsthouse.nixosModules.firsthouse
-          ./hosts/oink/disko.nix
-          ./hosts/oink/hardware-configuration.nix
-          ./hosts/oink/configuration.nix
-          ./hosts/oink/firsthouse.nix
-          home-manager.nixosModules.home-manager
-          {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.backupFileExtension = "hm-bak";
-            home-manager.sharedModules = [ nix-index-database.homeModules.nix-index ];
-            home-manager.users.arne = import ./hosts/oink/home.nix;
-          }
-        ];
-      };
 
       # meow — home box (Intel NUC-class, i5-8259U, 256 GB NVMe). No mirror
       # and no ZFS: plain GPT + ext4 root + swap partition via disko (see
