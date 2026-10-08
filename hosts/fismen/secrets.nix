@@ -28,6 +28,24 @@
   sops.secrets."caddy/cloudflare-env" = { mode = "0400"; };
   sops.secrets."nyheter/oidc-env"     = { mode = "0400"; };
 
+  # NetBird control plane (./netbird.nix). netbird-management reads these as
+  # root through its jq pre-start, but coturn's pre-start runs as the
+  # `turnserver` user, so turn-password needs that owner or coturn dies with
+  # EACCES before it ever starts. root still reads it regardless of owner.
+  #   sops set secrets/fismen.yaml '["netbird"]["datastore-key"]'  '"<32+ random bytes>"'
+  #   sops set secrets/fismen.yaml '["netbird"]["turn-password"]'  '"<random>"'
+  #   sops set secrets/fismen.yaml '["netbird"]["turn-secret"]'    '"<random>"'
+  # datastore-key encrypts the peer store at rest: BACK IT UP. Losing it means
+  # re-enrolling every peer, and it must stay identical across restores.
+  sops.secrets."netbird/datastore-key"  = { mode = "0400"; };
+  sops.secrets."netbird/turn-password"  = { mode = "0400"; owner = "turnserver"; };
+  sops.secrets."netbird/turn-secret"    = { mode = "0400"; };
+
+  # netbird/oidc-client-secret is deliberately NOT declared: the Pocket ID
+  # `netbird` client is public (PKCE only), so no secret is sent by either the
+  # CLI or the dashboard. The encrypted value is still in secrets/fismen.yaml —
+  # prune it alongside the other stale keys noted below.
+
   # navidrome/env is gone with navidrome itself (replaced by gonic, which has
   # no equivalent key: it stores credentials in its own DB). The stale value is
   # still encrypted in secrets/fismen.yaml — prune it alongside beszel's below.
