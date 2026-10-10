@@ -40,13 +40,19 @@
 
     # Caddy with the Cloudflare DNS plugin for DNS-01 ACME. v0.2.3 matches the
     # exact plugin version the live (Debian) caddy 2.11.2 was built with.
-    # The buildGo126Module override works around a 25.11 nixpkgs bug:
-    # withPlugins rebuilds caddy with the DEFAULT Go builder (1.25), but
-    # caddy 2.11.3's go.mod requires >= 1.26.3.
+    #
+    # The buildGo126Module override is a leftover from 25.11, where withPlugins
+    # rebuilt caddy with the default Go builder (1.25) while caddy's go.mod
+    # required >= 1.26.3. 26.05's default is already Go 1.26.8, so the override
+    # is redundant — kept only because dropping it re-vendors the source and
+    # needs a fresh `hash` below. Drop both together when convenient.
+    #
+    # The hash tracks caddy's version, not just the plugin: 26.05 moved caddy
+    # 2.11.3 -> 2.11.7 and this had to be refreshed.
     package =
       (pkgs.caddy.override { buildGoModule = pkgs.buildGo126Module; }).withPlugins {
         plugins = [ "github.com/caddy-dns/cloudflare@v0.2.3" ];
-        hash = "sha256-iTox1dCA6PiEiT1TIX3QWF64waYQpI/s/XCqIeRQ5Sc=";
+        hash = "sha256-8KwWkxhCyz7cxRFjm47tUS/veVH7cVzv/+FQ16ri3jE=";
       };
   };
 
@@ -96,15 +102,14 @@
       done
     '';
 
-    # And if it still loses a race, keep trying rather than parking in `failed`
-    # with the whole estate behind it. The module already gives us
-    # Restart=on-failure and RestartSec=5s; what it also gives us is
-    # StartLimitBurst=10 inside a 4h window, so ten quick failures park the
-    # unit for four hours. Backoff + no give-up, same reasoning as
-    # netbird-management in ./netbird.nix.
-    serviceConfig.RestartSteps = 5;
-    serviceConfig.RestartMaxDelaySec = 60;
-    startLimitIntervalSec = 0;
+    # NOTE, deliberately NOT adding a restart policy here: the module sets
+    # `RestartPreventExitStatus=1` alongside `Restart=on-failure`, and a failed
+    # bind exits with exactly status 1 — which is why caddy sat in `failed`
+    # after the 2026-10-10 reboot instead of retrying. No RestartSec/
+    # RestartSteps/StartLimit tuning can change that, and clearing
+    # RestartPreventExitStatus would make a genuine Caddyfile error restart-loop
+    # forever, which is what the module is protecting against. The ExecStartPre
+    # gate above is the fix; it stops the exit-1 from happening at all.
   };
 
   # Static-site vhosts serve from /var/www/<site> — migrate those trees over

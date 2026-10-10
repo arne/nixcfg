@@ -2,14 +2,14 @@
   description = "arne's multi-host flake";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
-    # Unstable, used as an overlay for individual packages that 25.11's pin is
-    # too old for (currently: llama-cpp — 25.11 has build 6981, which predates
-    # Gemma 4; unstable is 9190+). Lock so it doesn't drift.
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+    # Unstable, used as an overlay for individual packages that the stable pin
+    # is too old for (currently: llama-cpp — RECHECK against 26.05, the build
+    # numbers in hosts/fox/llama.nix refer to 25.11). Lock so it doesn't drift.
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     home-manager = {
-      url = "github:nix-community/home-manager/release-25.11";
+      url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
