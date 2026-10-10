@@ -18,7 +18,11 @@
 
     # RTX 2000 Ada — the driver comes from ./nvidia.nix. This is the whole
     # reason the GPU is in this box.
-    acceleration = "cuda";
+    #
+    # 26.05 removed `acceleration` (mkRemovedOptionModule) in favour of picking
+    # the package directly; ollama-cuda is what `acceleration = "cuda"` used to
+    # select.
+    package = pkgs.ollama-cuda;
 
     # Localhost only: its consumer is open-webui on the same host. Flip to
     # "0.0.0.0" + open port 11434 if other machines need the API directly.

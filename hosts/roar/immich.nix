@@ -7,12 +7,14 @@
 # /storage/migration/immich-db.sql.
 #
 # Postgres is managed by the immich module (services.postgresql). The database
-# dump was taken under vchord 0.4.3; 25.11 ships 0.5.3, and the module detects
-# that version change and reindexes automatically on activation.
+# dump was taken under vchord 0.4.3 and the module reindexes automatically when
+# it detects a vchord version change on activation — expect that on the first
+# 26.05 activation, since the shipped vchord moved again.
 #
-# pgvecto.rs (`vectors`) is deliberately NOT enabled: immich v2 had already
-# migrated to VectorChord, the dump requires only `vchord` + `vector`, and
-# leaving it off is what allows PostgreSQL 17+ (the module asserts otherwise).
+# The former `database.enableVectorChord`/`enableVectors` toggles are GONE in
+# 26.05 (mkRemovedOptionModule): pgvecto.rs is no longer packaged, so
+# VectorChord is unconditional and there is nothing left to switch off. Setting
+# either one is now an eval error, which is what broke this host on the bump.
 { config, pkgs, lib, ... }:
 
 {
@@ -29,10 +31,6 @@
     port = 2283;
     openFirewall = true;
 
-    database = {
-      enable = true;
-      enableVectorChord = true;
-      enableVectors = false;
-    };
+    database.enable = true;
   };
 }
