@@ -21,8 +21,18 @@
     email = "arnefismen@gmail.com";
 
     # Admin API on the Incus bridge IP, matching the live deployment.
+    #
+    # grace_period bounds how long caddy drains on SIGTERM. Unset, it drains
+    # indefinitely, and the nb.fismen.no gRPC routes hold streams open for as
+    # long as a peer is connected: on 2026-10-10 a routine `nixos-rebuild
+    # switch` sent SIGTERM, caddy never finished draining, systemd SIGKILLed it
+    # at the 5s TimeoutStopSec, the unit landed in `failed` (Result: timeout)
+    # and the activation never started it again — taking all ~45 vhosts down,
+    # not just NetBird. This MUST stay below the module's TimeoutStopSec=5s or
+    # it changes nothing: the point is for caddy to exit on its own first.
     globalConfig = ''
       admin 10.228.107.1:2019
+      grace_period 3s
     '';
 
     # The site blocks + the (cf)/(tinyauth) snippets.
@@ -30,13 +40,19 @@
 
     # Caddy with the Cloudflare DNS plugin for DNS-01 ACME. v0.2.3 matches the
     # exact plugin version the live (Debian) caddy 2.11.2 was built with.
-    # The buildGo126Module override works around a 25.11 nixpkgs bug:
-    # withPlugins rebuilds caddy with the DEFAULT Go builder (1.25), but
-    # caddy 2.11.3's go.mod requires >= 1.26.3.
+    #
+    # The buildGo126Module override is a leftover from 25.11, where withPlugins
+    # rebuilt caddy with the default Go builder (1.25) while caddy's go.mod
+    # required >= 1.26.3. 26.05's default is already Go 1.26.8, so the override
+    # is redundant — kept only because dropping it re-vendors the source and
+    # needs a fresh `hash` below. Drop both together when convenient.
+    #
+    # The hash tracks caddy's version, not just the plugin: 26.05 moved caddy
+    # 2.11.3 -> 2.11.7 and this had to be refreshed.
     package =
       (pkgs.caddy.override { buildGoModule = pkgs.buildGo126Module; }).withPlugins {
         plugins = [ "github.com/caddy-dns/cloudflare@v0.2.3" ];
-        hash = "sha256-iTox1dCA6PiEiT1TIX3QWF64waYQpI/s/XCqIeRQ5Sc=";
+        hash = "sha256-8KwWkxhCyz7cxRFjm47tUS/veVH7cVzv/+FQ16ri3jE=";
       };
   };
 
@@ -56,23 +72,44 @@
     # here once hosts/fismen/secrets.nix is armed.
     serviceConfig.EnvironmentFile = "-/run/secrets/caddy/cloudflare-env";
 
-    # TAILNET-BIND RACE GATE: the Caddyfile pins `bind 100.102.255.10` (fismen's
-    # tailnet IP). tailscaled assigns that address asynchronously *after* it
-    # authenticates, so on a cold boot caddy can reach ExecStart before the IP
-    # exists and die with "bind: cannot assign requested address". Order after
-    # tailscaled and block ExecStart until the address is actually present on a
-    # local interface (the caddy module sets no ExecStartPre of its own).
-    after = [ "tailscaled.service" ];
+    # BIND-RACE GATE: caddy pins two addresses it does not own, and dies with
+    # "bind: cannot assign requested address" if either is missing at ExecStart.
+    # Both are assigned asynchronously by something else, so ordering alone
+    # cannot settle it — the gate below is what actually guarantees presence.
+    #   100.102.255.10   the Caddyfile's `bind` (tailscale0). tailscaled assigns
+    #                    it only after it authenticates.
+    #   10.228.107.1     the admin endpoint above (incusbr0). Created with the
+    #                    bridge when incus starts.
+    # Only the first was gated originally, which is exactly how the 2026-10-10
+    # reboot went: the tailnet wait passed, the bridge did not yet exist, and
+    # caddy exited 1 on the admin listener with every vhost behind it.
+    after = [ "tailscaled.service" "incus.service" ];
     wants = [ "tailscaled.service" ];
-    serviceConfig.ExecStartPre = pkgs.writeShellScript "wait-for-tailnet-ip" ''
-      ip=100.102.255.10
-      for _ in $(seq 1 60); do
-        ${pkgs.iproute2}/bin/ip -4 -o addr show | ${pkgs.gnugrep}/bin/grep -qw "$ip" && exit 0
-        sleep 1
+    serviceConfig.ExecStartPre = pkgs.writeShellScript "wait-for-bind-ips" ''
+      for ip in 100.102.255.10 10.228.107.1; do
+        ok=
+        for _ in $(seq 1 60); do
+          if ${pkgs.iproute2}/bin/ip -4 -o addr show | ${pkgs.gnugrep}/bin/grep -qw "$ip"; then
+            ok=1
+            break
+          fi
+          sleep 1
+        done
+        if [ -z "$ok" ]; then
+          echo "wait-for-bind-ips: $ip not assigned after 60s" >&2
+          exit 1
+        fi
       done
-      echo "wait-for-tailnet-ip: $ip not assigned after 60s" >&2
-      exit 1
     '';
+
+    # NOTE, deliberately NOT adding a restart policy here: the module sets
+    # `RestartPreventExitStatus=1` alongside `Restart=on-failure`, and a failed
+    # bind exits with exactly status 1 — which is why caddy sat in `failed`
+    # after the 2026-10-10 reboot instead of retrying. No RestartSec/
+    # RestartSteps/StartLimit tuning can change that, and clearing
+    # RestartPreventExitStatus would make a genuine Caddyfile error restart-loop
+    # forever, which is what the module is protecting against. The ExecStartPre
+    # gate above is the fix; it stops the exit-1 from happening at all.
   };
 
   # Static-site vhosts serve from /var/www/<site> — migrate those trees over
