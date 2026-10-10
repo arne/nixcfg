@@ -15,8 +15,8 @@
 #   fleet                 status table of every host in the flake
 #   fleet status [host…]  same, optionally filtered
 #   fleet update          gum picker → deploy the chosen host(s)
-#   fleet update fox      deploy fox directly
-#   fleet update -y fox   …without the confirm prompt
+#   fleet update roar     deploy roar directly
+#   fleet update -y roar  …without the confirm prompt
 #
 # DRIFT is decided by comparing the flake revision each host was built from
 # (its system.configurationRevision, stamped in modules/base.nix) against the

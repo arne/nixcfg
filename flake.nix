@@ -3,9 +3,17 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
-    # Unstable, used as an overlay for individual packages that the stable pin
-    # is too old for (currently: llama-cpp — RECHECK against 26.05, the build
-    # numbers in hosts/fox/llama.nix refer to 25.11). Lock so it doesn't drift.
+    # Unstable, for what the stable pin can't serve. Two consumers:
+    #   hosts/roar/immich.nix  immich 3.x — 26.05's 2.7.5 is marked insecure
+    #   herdr (below)          follows this rather than stable
+    # NOTE THE SECOND ONE IS FLEETWIDE: modules/base.nix installs herdr on
+    # EVERY host, so bumping this input is not a roar-only change — it rebuilds
+    # herdr everywhere against unstable's toolchain. The 2026-10-10 bump moved
+    # it from unstable@2026-06-06 to @2026-10-08 (gcc 15 -> 16, glibc 2.42-61
+    # -> 2.44-25); closure size was a wash and herdr's source is pinned to a
+    # release tag, so only its build inputs moved. Rebuild the whole fleet
+    # after touching this, not just roar.
+    # (It also carried fox's llama-cpp until fox left this flake, 2026-10-10.)
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     home-manager = {
@@ -81,26 +89,6 @@
 
   outputs = inputs@{ self, nixpkgs, home-manager, niri, apple-silicon, launcher, llm-agents, disko, sops-nix, nix-index-database, herdr, ... }:
     {
-      nixosConfigurations.fox = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        specialArgs = { inherit inputs; };
-        modules = [
-          ./hosts/fox/hardware-configuration.nix
-          ./hosts/fox/configuration.nix
-          # niri module + unstable-pin + the rest of the Wayland desktop surface
-          # are shared via modules/desktop.nix, imported from fox's configuration.nix.
-          home-manager.nixosModules.home-manager
-          {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.backupFileExtension = "hm-bak";
-            home-manager.sharedModules = [ nix-index-database.homeModules.nix-index ];
-            home-manager.users.arne = import ./hosts/fox/home.nix;
-            home-manager.extraSpecialArgs = { inherit launcher llm-agents; };
-          }
-        ];
-      };
-
       # fismen — headless server (Hetzner dedicated). The main estate: Caddy
       # (~40 vhosts) + ~32 Incus instances + nyheter/bbs host services. ZFS
       # rpool mirrored across the two NVMes (disko); BIOS GRUB (see
@@ -126,8 +114,9 @@
       };
 
       # air — MacBook Air, Apple Silicon (aarch64), Asahi kernel via the
-      # nix-community/nixos-apple-silicon flake. Same niri/home-manager stack
-      # as fox; per-host niri output config is files/niri/air.kdl.
+      # nix-community/nixos-apple-silicon flake. The only remaining niri
+      # desktop host (fox was the other); its niri output config is
+      # files/niri/air.kdl, on top of files/niri/common.kdl.
       nixosConfigurations.air = nixpkgs.lib.nixosSystem {
         system = "aarch64-linux";
         specialArgs = { inherit inputs; };
