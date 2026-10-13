@@ -354,6 +354,15 @@ writeShellApplication {
         gum confirm "Deploy: ''${targets[*]}?" || return 0
       fi
 
+      # Re-lock llm-agents before deploying so every host gets the current
+      # claude-code/crush rather than whatever was committed. `rebuild` does the
+      # same for the local host (home/fish.nix); doing it only there left
+      # fleet-deployed hosts frozen at the committed revision. Leaves flake.lock
+      # dirty by design — same contract as `rebuild`.
+      gum style --foreground "$green" "▸ re-locking llm-agents"
+      nix flake update llm-agents --refresh --flake "$flakedir" || \
+        gum style --foreground "$red" "! llm-agents refresh failed; deploying with the locked revision"
+
       local h rc=0 deployed=()
       for h in "''${targets[@]}"; do
         if deploy_one "$h"; then
