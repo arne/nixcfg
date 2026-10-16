@@ -30,7 +30,7 @@ in
   ###########################################################################
   ## Beszel agent — the per-host metrics collector (CPU / memory / disk /
   ## network / temperatures, and container stats where there is a Docker or
-  ## Podman socket). Imported by fox, fismen, roar and meow; NOT by air,
+  ## Podman socket). Imported by fismen, roar and meow; NOT by air,
   ## which is a laptop that is asleep more often than not and would just sit
   ## in the hub's UI showing as down.
   ##
