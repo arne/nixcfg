@@ -379,6 +379,7 @@
         "nix-index-database": "nix-index-database",
         "nixpkgs": "nixpkgs_4",
         "nixpkgs-unstable": "nixpkgs-unstable",
+        "skole": "skole",
         "sops-nix": "sops-nix"
       }
     },
@@ -401,6 +402,22 @@
         "owner": "oxalica",
         "repo": "rust-overlay",
         "type": "github"
+      }
+    },
+    "skole": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792604404,
+        "narHash": "sha256-TwMx+ZXaUS1BAVWCCthYgNXKkXlMjdLnq5L5sjglXTQ=",
+        "ref": "refs/heads/main",
+        "rev": "e162881f816a854083424302d073a0017c623ccb",
+        "revCount": 9,
+        "type": "git",
+        "url": "ssh://git@github.com/arne/skole"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/arne/skole"
       }
     },
     "sops-nix": {

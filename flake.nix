@@ -85,6 +85,15 @@
     # redirects the old path; this just tracks the canonical one).
     herdr.url = "github:herdrdev/herdr/v0.7.5";
     herdr.inputs.nixpkgs.follows = "nixpkgs-unstable";
+
+    # skole.fismen.no — Go-app (SQLite + htmx) i et privat repo. Hentes over
+    # SSH med deploy-nøkkelen /home/arne/.ssh/skole_deploy (lesetilgang til
+    # arne/skole bare); programs.ssh i hosts/fismen/services.nix peker root og
+    # arne dit. Ny versjon: `nix flake update skole`, så deploy fismen.
+    skole = {
+      url = "git+ssh://git@github.com/arne/skole";
+      flake = false;
+    };
   };
 
   outputs = inputs@{ self, nixpkgs, home-manager, niri, apple-silicon, launcher, llm-agents, disko, sops-nix, nix-index-database, herdr, ... }:
