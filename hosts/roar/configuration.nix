@@ -7,6 +7,7 @@
     ./immich.nix
     ./ai.nix
     ../../modules/services/beszel.nix
+    ../../modules/rex.nix
   ];
 
   ###########################################################################
