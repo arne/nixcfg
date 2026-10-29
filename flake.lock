@@ -407,11 +407,11 @@
     "skole": {
       "flake": false,
       "locked": {
-        "lastModified": 1792604404,
-        "narHash": "sha256-TwMx+ZXaUS1BAVWCCthYgNXKkXlMjdLnq5L5sjglXTQ=",
+        "lastModified": 1793185621,
+        "narHash": "sha256-hhRTHlNNY3wDhniGJ9GfPhcSmCLOw4e6YbB1hn18pII=",
         "ref": "refs/heads/main",
-        "rev": "e162881f816a854083424302d073a0017c623ccb",
-        "revCount": 9,
+        "rev": "8c1048e2e9f79397cc4b9f4be837cc15373ed5b0",
+        "revCount": 17,
         "type": "git",
         "url": "ssh://git@github.com/arne/skole"
       },
