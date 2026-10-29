@@ -75,6 +75,10 @@
     # path and declines to self-replace, telling you to update through Nix.
     # Upstream renamed ogulcancelik/herdr -> herdrdev/herdr (GitHub still
     # redirects the old path; this just tracks the canonical one).
+    # Rex, terminal multiplexer — pre-release, so the tarball needs the token
+    # in /etc/nix/netrc on any host that evaluates this flake. See modules/rex.nix.
+    rex.url = "https://pkgs.superlogical.com/rex/nix/snapshot.tar.gz";
+
     herdr.url = "github:herdrdev/herdr/v0.7.5";
     herdr.inputs.nixpkgs.follows = "nixpkgs-unstable";
   };

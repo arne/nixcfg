@@ -11,6 +11,7 @@
     ./secrets.nix
     ./restic-target.nix
     ../../modules/services/beszel.nix
+    ../../modules/rex.nix
   ];
 
   ###########################################################################
