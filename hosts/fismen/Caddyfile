@@ -318,11 +318,11 @@ nb.fismen.no {
 
 # Panacea product steering. Incus instance panacea-alpha, IP pinned by
 # scripts/deploy-alpha in the arne/panacea repo on code.bas.es.
-project.panacea.no {
+prosjekt.panacea.no {
 	reverse_proxy 10.228.107.90:8090
 }
 
 # The app's old address.
 alpha.panacea.no {
-	redir https://project.panacea.no{uri} permanent
+	redir https://prosjekt.panacea.no{uri} permanent
 }
