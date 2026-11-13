@@ -407,6 +407,7 @@
         "nix-index-database": "nix-index-database",
         "nixpkgs": "nixpkgs_4",
         "nixpkgs-unstable": "nixpkgs-unstable",
+        "rex": "rex",
         "skole": "skole",
         "sops-nix": "sops-nix"
       }
