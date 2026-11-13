@@ -15,8 +15,8 @@
 #   fleet                 status table of every host in the flake
 #   fleet status [host…]  same, optionally filtered
 #   fleet update          gum picker → deploy the chosen host(s)
-#   fleet update fox      deploy fox directly
-#   fleet update -y fox   …without the confirm prompt
+#   fleet update roar     deploy roar directly
+#   fleet update -y roar  …without the confirm prompt
 #
 # DRIFT is decided by comparing the flake revision each host was built from
 # (its system.configurationRevision, stamped in modules/base.nix) against the
@@ -353,6 +353,15 @@ writeShellApplication {
       if [ "$yes" -eq 0 ]; then
         gum confirm "Deploy: ''${targets[*]}?" || return 0
       fi
+
+      # Re-lock llm-agents before deploying so every host gets the current
+      # claude-code/crush rather than whatever was committed. `rebuild` does the
+      # same for the local host (home/fish.nix); doing it only there left
+      # fleet-deployed hosts frozen at the committed revision. Leaves flake.lock
+      # dirty by design — same contract as `rebuild`.
+      gum style --foreground "$green" "▸ re-locking llm-agents"
+      nix flake update llm-agents --refresh --flake "$flakedir" || \
+        gum style --foreground "$red" "! llm-agents refresh failed; deploying with the locked revision"
 
       local h rc=0 deployed=()
       for h in "''${targets[@]}"; do

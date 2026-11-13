@@ -202,8 +202,9 @@ chess.fismen.no {
 }
 
 skole.fismen.no {
-	root * /var/www/skole
-	file_server
+	# Go-appen (systemd.services.skole i services.nix) serverer både de
+	# statiske sidene i /var/www/skole og innspillsoversikten.
+	reverse_proxy 127.0.0.1:8085
 	encode zstd gzip
 	# Access logging. Caddy creates and rolls the file itself (100MiB, 10 kept,
 	# 90 days) as the caddy user — never pre-create it as root, or caddy fails
@@ -313,4 +314,10 @@ nb.fismen.no {
 	}
 
 	encode zstd gzip
+}
+
+# Panacea product steering (alpha). Incus instance panacea-alpha, IP pinned by
+# scripts/deploy-alpha in the arne/panacea repo on code.bas.es.
+alpha.panacea.no {
+	reverse_proxy 10.228.107.90:8090
 }

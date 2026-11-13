@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, inputs, ... }:
 
 {
   ###########################################################################
@@ -42,6 +42,44 @@
       DB_PATH = "/var/lib/teater/festival.db";
     };
   };
+
+  ###########################################################################
+  ## Skole — skole.fismen.no. Go-app med SQLite og htmx, bygd fra det private
+  ## repoet github.com/arne/skole (flake-input `skole`). Serverer de
+  ## håndskrevne sidene i /var/www/skole med toppmeny, og en søkbar oversikt
+  ## over høringsinnspillene i /var/www/skole-data/hoyring. Databasen bygges
+  ## fra datamappen ved oppstart: ny data → `systemctl restart skole`.
+  ###########################################################################
+  systemd.services.skole = {
+    description = "Skole — skole.fismen.no";
+    wantedBy = [ "multi-user.target" ];
+    wants = [ "network-online.target" ];
+    after = [ "network-online.target" ];
+
+    serviceConfig = {
+      ExecStart = lib.concatStringsSep " " [
+        "${pkgs.callPackage "${inputs.skole}/nix/package.nix" { }}/bin/skole"
+        "-adr 127.0.0.1:8085"
+        "-statisk /var/www/skole"
+        "-data /var/www/skole-data/hoyring"
+        "-db /var/lib/skole/skole.db"
+      ];
+      Restart = "always";
+      RestartSec = 5;
+      DynamicUser = true;
+      StateDirectory = "skole";
+      ProtectHome = true;
+    };
+  };
+
+  # Root (sudo nixos-rebuild) og arne henter det private skole-repoet med en
+  # egen deploy-nøkkel som bare har lesetilgang til arne/skole.
+  programs.ssh.extraConfig = ''
+    Host github.com
+      IdentityFile /home/arne/.ssh/skole_deploy
+  '';
+  programs.ssh.knownHosts."github.com".publicKey =
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl";
 
   ###########################################################################
   ## beszel-agent — MOVED. This host's agent used to be a hand-rolled unit

@@ -196,6 +196,51 @@ in
     };
   };
 
+  # Management reads its OIDC configuration from auth.fismen.no ONCE, at
+  # startup, and exits non-zero if that fetch fails. The upstream unit pairs
+  # `Restart=always` with systemd's default rate limit of 5 starts per 10s, so
+  # a dependency that is briefly absent is not survived but amplified: on
+  # 2026-10-08 a restart raced DNS coming back ("lookup auth.fismen.no: no such
+  # host"), burned all five attempts in four seconds, hit the start limit, and
+  # left the control plane down for a day and a half. Nothing retried, and
+  # nothing was obviously broken — the dashboard is static and kept serving,
+  # so the only symptom was a login spinner that never resolved.
+  #
+  # The fix is to let it keep trying, with backoff. Identity lives behind
+  # Caddy and an Incus container on this same host, none of which this unit
+  # can meaningfully order itself against (containers come up asynchronously,
+  # so `After=incus.service` would prove nothing), and a peer's own network
+  # can take the name away at any time. Retrying IS the dependency management.
+  systemd.services.netbird-management = {
+    # Boot ordering, for the one race that ordering can actually win.
+    # nss-lookup.target is passive by contract — ordered after, never pulled
+    # in; systemd-resolved is what brings it up (systemd.special(7)).
+    wants = [ "network-online.target" ];
+    after = [ "network-online.target" "nss-lookup.target" ];
+
+    serviceConfig = {
+      # Exponential backoff, 5s -> 60s over five steps. The default
+      # RestartSec=100ms is what made the burst limit reachable at all, and it
+      # also raced the dying process for pprof's :6060 ("address already in
+      # use") on the way out.
+      RestartSec = 5;
+      RestartSteps = 5;
+      RestartMaxDelaySec = 60;
+    };
+
+    # Never give up. A control plane that has stopped trying is strictly worse
+    # than one still retrying once a minute: established WireGuard tunnels keep
+    # forwarding without it, but logins, enrolments and policy changes all stay
+    # broken until a human notices. Trade-off to know about: the unit no longer
+    # settles into `failed`, it sits in auto-restart, so anything that alerts
+    # on failed units will not fire for this one.
+    #
+    # Set via the NixOS option, not serviceConfig: the start-limit settings
+    # live in [Unit], and systemd only still accepts them in [Service] as a
+    # compatibility shim.
+    startLimitIntervalSec = 0;
+  };
+
   # The dashboard is a static build; ./Caddyfile serves it from this path and
   # proxies the API/gRPC routes past it. Exported so the Caddyfile and the
   # package stay in lockstep across rebuilds.
