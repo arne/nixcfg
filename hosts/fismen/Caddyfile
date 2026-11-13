@@ -315,3 +315,9 @@ nb.fismen.no {
 
 	encode zstd gzip
 }
+
+# Panacea product steering (alpha). Incus instance panacea-alpha, IP pinned by
+# scripts/deploy-alpha in the arne/panacea repo on code.bas.es.
+alpha.panacea.no {
+	reverse_proxy 10.228.107.90:8090
+}
